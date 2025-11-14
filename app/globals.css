@@ -24,3 +24,23 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+input, textarea, select {
+  @apply text-black;
+}
+
+/* Set default text color to black globally */
+html, body, input, textarea, select, button {
+  color: black; /* default black text */
+}
+
+/* Optional: keep placeholders visible */
+::placeholder {
+  color: #a0a0a0; /* subtle gray for placeholder text */
+}
+
+/* Optional: links default to black too */
+a {
+  color: black;
+  text-decoration: none;
+}
