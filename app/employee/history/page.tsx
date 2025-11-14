@@ -1,11 +1,11 @@
 "use client";
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, Package, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { ChevronLeft, Package, Clock, CheckCircle, XCircle, Repeat } from 'lucide-react';
 
 export default function OrderHistory() {
   const router = useRouter();
-  const { getOrderHistory } = useAuth();
+  const { getOrderHistory, repeatOrder } = useAuth();
   const orders = getOrderHistory();
 
   const getStatusColor = (status: string) => {
@@ -39,6 +39,11 @@ export default function OrderHistory() {
       default:
         return <Clock size={16} />;
     }
+  };
+
+  const handleRepeatOrder = (orderId: string) => {
+    repeatOrder(orderId);
+    router.push('/employee/checkout');
   };
 
   return (
@@ -107,9 +112,17 @@ export default function OrderHistory() {
                         <span className="ml-2">• Slot: {order.selectedSlot}</span>
                       )}
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500">Total</p>
-                      <p className="text-lg font-bold text-blue-600">₹{order.total.toFixed(2)}</p>
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={() => handleRepeatOrder(order.orderId)}
+                        className="flex items-center gap-2 bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg font-semibold text-sm transition"
+                      >
+                        <Repeat size={16} /> Repeat order
+                      </button>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-500">Total</p>
+                        <p className="text-lg font-bold text-blue-600">₹{order.total.toFixed(2)}</p>
+                      </div>
                     </div>
                   </div>
                 </div>

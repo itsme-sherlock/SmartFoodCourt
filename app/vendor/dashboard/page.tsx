@@ -42,6 +42,9 @@ export default function VendorDashboard() {
             <Link href="/vendor/analytics" className="text-green-600 hover:underline">
               📊 Analytics
             </Link>
+            <Link href="/vendor/orders" className="text-blue-600 hover:underline font-bold">
+              📦 Orders & QR Scanner
+            </Link>
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"

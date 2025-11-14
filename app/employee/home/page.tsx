@@ -1,15 +1,24 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { mockVendors } from '@/lib/mockData';
-import { LogOut, Search } from 'lucide-react';
+import { LogOut, Search, Repeat } from 'lucide-react';
+import type { Order } from '@/context/AuthContext';
 
 export default function EmployeeHome() {
   const router = useRouter();
-  const { user, logout, cart } = useAuth();
+  const { user, logout, cart, getOrderHistory, repeatOrder } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
+  const [lastOrder, setLastOrder] = useState<Order | null>(null);
+
+  useEffect(() => {
+    const history = getOrderHistory();
+    if (history.length > 0) {
+      setLastOrder(history[0]);
+    }
+  }, [getOrderHistory]);
 
   const filteredVendors = mockVendors.filter(vendor =>
     vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -19,6 +28,13 @@ export default function EmployeeHome() {
   const handleLogout = () => {
     logout();
     router.push('/');
+  };
+
+  const handleRepeatOrder = () => {
+    if (lastOrder) {
+      repeatOrder(lastOrder.orderId);
+      router.push('/employee/checkout');
+    }
   };
 
   return (
@@ -33,6 +49,9 @@ export default function EmployeeHome() {
           <div className="flex items-center gap-4">
             <Link href="/employee/history" className="text-blue-600 hover:underline">
               📋 Order History
+            </Link>
+            <Link href="/employee/reservation" className="text-blue-600 hover:underline">
+              🗓️ Make a Reservation
             </Link>
             <Link href="/employee/profile" className="text-blue-600 hover:underline">
               👤 Profile
@@ -66,6 +85,31 @@ export default function EmployeeHome() {
             <p className="text-blue-700 font-semibold">Cart Items: {cart.length}</p>
           </div>
         </div>
+
+        {/* Repeat Last Order */}
+        {lastOrder && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-bold text-blue-800">Quick Reorder</h2>
+                <p className="text-blue-700">Your last order from {lastOrder.items[0]?.vendorName}</p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {lastOrder.items.map((item, index) => (
+                    <span key={index} className="bg-white text-gray-700 px-2 py-1 rounded text-sm">
+                      {item.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <button
+                onClick={handleRepeatOrder}
+                className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition"
+              >
+                <Repeat size={18} /> Repeat Order (₹{lastOrder.total.toFixed(2)})
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Vendor Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

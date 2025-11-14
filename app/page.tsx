@@ -42,9 +42,7 @@ export default function RoleSelection() {
           </button>
         </div>
 
-        <p className="text-center text-gray-600 text-sm mt-8">
-          Demo credentials available after selecting role
-        </p>
+
       </div>
     </div>
   );
