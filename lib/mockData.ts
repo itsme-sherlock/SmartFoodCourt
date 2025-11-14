@@ -1,4 +1,6 @@
-export const mockEmployees = [
+import type { User } from "@/context/AuthContext"
+
+export const mockEmployees: User[] = [
 	{
 		id: 'emp_1',
 		name: 'Raj Kumar',
