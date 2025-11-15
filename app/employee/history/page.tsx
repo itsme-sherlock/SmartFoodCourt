@@ -85,20 +85,21 @@ export default function OrderHistory() {
                       </p>
                       <p className="text-xs text-gray-500 mt-1">{order.date}</p>
                       {order.reservationType && (
-                        <div className="flex gap-2 mt-2">
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
-                            order.reservationType === 'pre-order' 
-                              ? 'bg-purple-100 text-purple-800 border border-purple-300' 
-                              : 'bg-orange-100 text-orange-800 border border-orange-300'
-                          }`}>
-                            <Calendar size={12} />
-                            {order.reservationType === 'pre-order' ? 'Pre-Order' : 'Late Meal'}
-                          </span>
-                          {order.reservationDate && order.reservationTime && (
-                            <span className="text-xs text-gray-600">
-                              {order.reservationDate} at {order.reservationTime}
+                        <div className='w-full'>
+                          <div className="flex gap-2 mt-2">
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${order.reservationType === 'pre-order'
+                                ? 'bg-purple-100 text-purple-800 border border-purple-300'
+                                : 'bg-orange-100 text-orange-800 border border-orange-300'
+                              }`}>
+                              <Calendar size={12} />
+                              {order.reservationType === 'pre-order' ? 'Pre-Order' : 'Late Meal'}
                             </span>
-                          )}
+                            {order.reservationDate && order.reservationTime && (
+                              <span className="text-xs text-gray-600">
+                                {order.reservationDate} at {order.reservationTime}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -123,16 +124,24 @@ export default function OrderHistory() {
                   </div>
 
                   <div className="border-t pt-3 flex justify-between items-center">
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-600 flex flex-col sm:flex-row">
                       <span className="capitalize">{order.paymentMethod}</span>
-                      {order.orderType === 'slot' && order.selectedSlot && (
-                        <span className="ml-2">• Slot: {order.selectedSlot}</span>
+
+                      {order.orderType === "slot" && order.selectedSlot && (
+                        <>
+                          {/* Mobile version */}
+                          <span className="ml-0 sm:hidden">{order.selectedSlot}</span>
+
+                          {/* Desktop version */}
+                          <span className="ml-2 hidden sm:inline">• Slot: {order.selectedSlot}</span>
+                        </>
                       )}
                     </div>
+
                     <div className="flex items-center gap-4">
                       <button
                         onClick={() => handleRepeatOrder(order.orderId)}
-                        className="flex items-center gap-2 bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg font-semibold text-sm transition"
+                        className="flex items-center gap-2 bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 sm:px-4 sm:py-2 rounded-lg font-semibold text-[10px] sm:text-sm transition"
                       >
                         <Repeat size={16} /> Repeat order
                       </button>

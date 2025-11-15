@@ -55,7 +55,7 @@ export default function VendorMenu() {
           >
             <ChevronLeft size={20} /> Back
           </button>
-          <div className="flex justify-between items-start">
+          <div className="flex justify-between items-start flex-col sm:flex-row gap-y-4">
             <div>
               <div className="text-4xl mb-2">{vendor.logo}</div>
               <h1 className="text-3xl font-bold text-gray-800">{vendor.name}</h1>

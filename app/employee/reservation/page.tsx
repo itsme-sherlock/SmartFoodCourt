@@ -181,10 +181,10 @@ export default function ReservationPage() {
           {/* Tabs for Late Meal and Pre-Order */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="late-meal" className="text-base">
-                Late Meal Reservation
+              <TabsTrigger value="late-meal" className="text:xs sm:text-base">
+                Late Meal
               </TabsTrigger>
-              <TabsTrigger value="pre-order" className="text-base">
+              <TabsTrigger value="pre-order" className="text:xs sm:text-base">
                 Pre-Order
               </TabsTrigger>
             </TabsList>

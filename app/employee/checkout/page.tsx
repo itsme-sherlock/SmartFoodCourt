@@ -5,6 +5,8 @@ import { useAuth } from '@/context/AuthContext';
 import { mockTimeSlots } from '@/lib/mockData';
 import { ChevronLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { CircleMinus } from "lucide-react";
+
 
 export default function Checkout() {
   const router = useRouter();
@@ -134,7 +136,7 @@ export default function Checkout() {
                             onClick={() => handleRemoveItem(item)}
                             className="text-red-500 hover:text-red-700 font-bold"
                           >
-                            Remove
+                            <CircleMinus size ={20} color="red"/>
                           </button>
                         </div>
                       </div>

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { mockVendors } from '@/lib/mockData';
-import { LogOut, Search, Repeat } from 'lucide-react';
+import { LogOut, Search, Repeat, Menu, X } from 'lucide-react';
 import type { Order } from '@/context/AuthContext';
 
 export default function EmployeeHome() {
@@ -12,6 +12,9 @@ export default function EmployeeHome() {
   const { user, logout, cart, getOrderHistory, repeatOrder } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
+
+  // NEW: Mobile Menu State
+  const [hamburgerOpen, setHamburgerOpen] = useState(false);
 
   useEffect(() => {
     const history = getOrderHistory();
@@ -39,8 +42,42 @@ export default function EmployeeHome() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
+
+      {/* MOBILE HEADER */}
+      <div className="md:hidden w-full bg-white shadow-sm px-4 py-4 flex justify-between items-center">
+        <div>
+          <h1 className="text-xl font-bold text-blue-600">🍽️ Food Court</h1>
+          <p className="text-gray-600 text-sm">Welcome, {user?.name}</p>
+        </div>
+        <button onClick={() => setHamburgerOpen(!hamburgerOpen)}>
+          {hamburgerOpen ? <X size={28} /> : <Menu size={28} />}
+        </button>
+      </div>
+
+      {/* MOBILE DROPDOWN MENU */}
+      {hamburgerOpen && (
+        <div className="md:hidden bg-white shadow-md p-4 space-y-4">
+          <Link href="/employee/history" className="block text-blue-600 hover:underline">
+            📋 Order History
+          </Link>
+          <Link href="/employee/reservation" className="block text-blue-600 hover:underline">
+            🗓️ Make a Reservation
+          </Link>
+          <Link href="/employee/profile" className="block text-blue-600 hover:underline">
+            👤 Profile
+          </Link>
+
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
+          >
+            <LogOut size={18} /> Logout
+          </button>
+        </div>
+      )}
+
+      {/* DESKTOP HEADER (YOUR ORIGINAL HEADER) */}
+      <header className="bg-white shadow-sm hidden md:block">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-blue-600">🍽️ Food Court</h1>
@@ -89,13 +126,13 @@ export default function EmployeeHome() {
         {/* Repeat Last Order */}
         {lastOrder && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center flex-col sm:flex-row">
               <div>
                 <h2 className="text-xl font-bold text-blue-800">Quick Reorder</h2>
                 <p className="text-blue-700">Your last order from {lastOrder.items[0]?.vendorName}</p>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {lastOrder.items.map((item, index) => (
-                    <span key={index} className="bg-white text-gray-700 px-2 py-1 rounded text-sm">
+                    <span key={index} className="bg-white text-gray-700 px-2 py-1 rounded text-sm justify-around">
                       {item.name}
                     </span>
                   ))}
@@ -119,11 +156,15 @@ export default function EmployeeHome() {
                 <div className="p-6">
                   <div className="text-5xl mb-3">{vendor.logo}</div>
                   <h3 className="text-xl font-bold text-gray-800 mb-2">{vendor.name}</h3>
-                  
+
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-yellow-500">⭐</span>
                     <span className="font-semibold">{vendor.rating}</span>
-                    {vendor.isPopup && <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-sm font-semibold">Pop-Up</span>}
+                    {vendor.isPopup && (
+                      <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-sm font-semibold">
+                        Pop-Up
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap gap-2 mb-3">
@@ -134,7 +175,11 @@ export default function EmployeeHome() {
                     ))}
                   </div>
 
-                  <div className={`inline-block px-3 py-1 rounded-full text-white text-sm font-semibold ${vendor.status === 'Open' ? 'bg-green-500' : 'bg-gray-400'}`}>
+                  <div
+                    className={`inline-block px-3 py-1 rounded-full text-white text-sm font-semibold ${
+                      vendor.status === 'Open' ? 'bg-green-500' : 'bg-gray-400'
+                    }`}
+                  >
                     {vendor.status}
                   </div>
                 </div>
