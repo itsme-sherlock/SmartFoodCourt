@@ -33,6 +33,10 @@ export default function Checkout() {
     const orderId = `ORD${Date.now()}`;
     const timestamp = Date.now();
     
+    // Check if this is a reservation order
+    const firstItem = cart[0];
+    const isReservation = firstItem?.reservationType;
+    
     // Create order object
     const order = {
       orderId,
@@ -45,6 +49,9 @@ export default function Checkout() {
       paymentMethod,
       orderType,
       selectedSlot: orderType === 'slot' ? selectedSlot : undefined,
+      reservationType: isReservation ? firstItem.reservationType : undefined,
+      reservationDate: isReservation ? firstItem.reservationDate : undefined,
+      reservationTime: isReservation ? firstItem.reservationTime : undefined,
       status: 'pending' as const,
       timestamp,
       date: new Date(timestamp).toLocaleDateString('en-IN', {
@@ -59,7 +66,11 @@ export default function Checkout() {
     // Save order to history
     addOrder(order);
     
-    toast.success('Order placed successfully!', {
+    const orderTypeText = isReservation 
+      ? (firstItem.reservationType === 'pre-order' ? 'Pre-order' : 'Late meal reservation')
+      : 'Order';
+    
+    toast.success(`${orderTypeText} placed successfully!`, {
       description: `Order ID: ${orderId}`,
       duration: 2000,
     });
@@ -97,19 +108,35 @@ export default function Checkout() {
               ) : (
                 <div className="space-y-4">
                   {cart.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center border-b pb-4">
-                      <div>
-                        <p className="font-semibold text-gray-800">{item.name}</p>
-                        <p className="text-sm text-gray-600">{item.vendorName} • Size: {item.selectedSize}</p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="font-bold">₹{item.selectedPrice}</span>
-                        <button
-                          onClick={() => handleRemoveItem(item)}
-                          className="text-red-500 hover:text-red-700 font-bold"
-                        >
-                          Remove
-                        </button>
+                    <div key={idx} className="border-b pb-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-800">{item.name}</p>
+                          <p className="text-sm text-gray-600">{item.vendorName} • Size: {item.selectedSize}</p>
+                          {item.reservationType && (
+                            <div className="flex gap-2 mt-2">
+                              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
+                                item.reservationType === 'pre-order' 
+                                  ? 'bg-purple-100 text-purple-800 border border-purple-300' 
+                                  : 'bg-orange-100 text-orange-800 border border-orange-300'
+                              }`}>
+                                {item.reservationType === 'pre-order' ? 'Pre-Order' : 'Late Meal'}
+                              </span>
+                              <span className="text-xs text-gray-600 self-center">
+                                {item.reservationDate} at {item.reservationTime}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className="font-bold">₹{item.selectedPrice}</span>
+                          <button
+                            onClick={() => handleRemoveItem(item)}
+                            className="text-red-500 hover:text-red-700 font-bold"
+                          >
+                            Remove
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}

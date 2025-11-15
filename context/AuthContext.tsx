@@ -23,6 +23,9 @@ export interface Order {
 	paymentMethod: string;
 	orderType: 'now' | 'slot';
 	selectedSlot?: string;
+	reservationType?: 'late-meal' | 'pre-order';
+	reservationDate?: string;
+	reservationTime?: string;
 	status: 'pending' | 'preparing' | 'ready' | 'completed' | 'cancelled';
 	timestamp: number;
 	date: string;
@@ -44,6 +47,8 @@ interface AuthContextType {
 	repeatOrder: (orderId: string) => void;
 	updateOrderStatus: (orderId: string, status: string) => Promise<void>;
 	markOrderReady: (orderId: string) => Promise<void>;
+	loadVendorOrders: () => Promise<void>;
+	refreshOrders: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -63,13 +68,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 			}
 		}
 		if (user?.id) {
-			loadOrderHistory();
+			if (user.role === 'vendor' && user.stall) {
+				loadVendorOrders();
+			} else {
+				loadOrderHistory();
+			}
 		}
-	}, [user?.id]);
+	}, [user?.id, user?.role, user?.stall]);
 
 	const loadOrderHistory = async () => {
 		if (!user) return;
-		if (!hasSupabase) return;
+		if (!hasSupabase) {
+			// Load from localStorage only
+			return;
+		}
 		try {
 			const supabase = getSupabase();
 			if (!supabase) return;
@@ -93,14 +105,77 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 				total: dbOrder.total,
 				paymentMethod: dbOrder.payment_method,
 				orderType: 'now' as const,
+				reservationType: dbOrder.reservation_type,
+				reservationDate: dbOrder.reservation_date,
+				reservationTime: dbOrder.reservation_time,
 				status: dbOrder.status,
 				timestamp: new Date(dbOrder.created_at).getTime(),
 				date: new Date(dbOrder.created_at).toLocaleDateString(),
 			}));
 			
 			setOrders(convertedOrders);
+			// Also update localStorage
+			if (typeof window !== 'undefined') {
+				localStorage.setItem('orderHistory', JSON.stringify(convertedOrders));
+			}
 		} catch (err) {
 			console.error('Error loading orders:', err);
+		}
+	};
+
+	const loadVendorOrders = async () => {
+		if (!user?.stall) return;
+		if (!hasSupabase) {
+			// Load from localStorage only
+			return;
+		}
+		try {
+			const supabase = getSupabase();
+			if (!supabase) return;
+			
+			// Load all orders that contain items from this vendor
+			const { data, error } = await supabase
+				.from('orders')
+				.select('*')
+				.eq('vendor_id', user.stall)
+				.order('created_at', { ascending: false });
+
+			if (error) throw error;
+
+			// Convert Supabase data to Order format
+			const convertedOrders = (data || []).map((dbOrder: any) => ({
+				orderId: dbOrder.order_id,
+				userId: dbOrder.user_id,
+				userName: dbOrder.user_name,
+				items: dbOrder.items,
+				subtotal: dbOrder.total * 0.9,
+				tax: dbOrder.total * 0.1,
+				total: dbOrder.total,
+				paymentMethod: dbOrder.payment_method,
+				orderType: 'now' as const,
+				reservationType: dbOrder.reservation_type,
+				reservationDate: dbOrder.reservation_date,
+				reservationTime: dbOrder.reservation_time,
+				status: dbOrder.status,
+				timestamp: new Date(dbOrder.created_at).getTime(),
+				date: new Date(dbOrder.created_at).toLocaleDateString(),
+			}));
+			
+			setOrders(convertedOrders);
+			// Also update localStorage
+			if (typeof window !== 'undefined') {
+				localStorage.setItem('vendorOrders', JSON.stringify(convertedOrders));
+			}
+		} catch (err) {
+			console.error('Error loading vendor orders:', err);
+		}
+	};
+
+	const refreshOrders = async () => {
+		if (user?.role === 'vendor' && user?.stall) {
+			await loadVendorOrders();
+		} else if (user?.id) {
+			await loadOrderHistory();
 		}
 	};
 
@@ -146,22 +221,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 			const vendorId = order.items[0]?.vendorId || 'unknown';
 			const vendorName = order.items[0]?.vendorName || 'Unknown Vendor';
 			
+			// Prepare order data for Supabase
+			const orderData: any = {
+				order_id: order.orderId,
+				user_id: order.userId,
+				user_name: order.userName,
+				vendor_id: vendorId,
+				vendor_name: vendorName,
+				items: order.items,
+				total: order.total,
+				status: 'pending',
+				payment_method: order.paymentMethod,
+			};
+
+			// Add reservation fields only if they exist
+			if (order.reservationType) {
+				orderData.reservation_type = order.reservationType;
+			}
+			if (order.reservationDate) {
+				orderData.reservation_date = order.reservationDate;
+			}
+			if (order.reservationTime) {
+				orderData.reservation_time = order.reservationTime;
+			}
+			
 			const { data, error } = await supabase
 				.from('orders')
-				.insert([{
-					order_id: order.orderId,
-					user_id: order.userId,
-					user_name: order.userName,
-					vendor_id: vendorId,
-					vendor_name: vendorName,
-					items: order.items,
-					total: order.total,
-					status: 'pending',
-					payment_method: order.paymentMethod,
-				}])
+				.insert([orderData])
 				.select();
 
-			if (error) throw error;
+			if (error) {
+				// If error is about missing columns, save locally and warn user
+				if (error.code === 'PGRST204' || error.message?.includes('column')) {
+					console.warn('Supabase schema needs update. Saving to localStorage only.');
+					toast.warning('Database schema needs update', {
+						description: 'Order saved locally. Please run the migration SQL.',
+					});
+					// Continue with local save below
+				} else {
+					throw error;
+				}
+			} else {
+				// Refresh orders after adding
+				await refreshOrders();
+			}
 
 			// Create vendor_order record for QR scanning
 			for (const item of order.items) {
@@ -223,7 +326,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 				.eq('order_id', orderId);
 
 			if (error) throw error;
-			await loadOrderHistory();
+			await refreshOrders();
 		} catch (err) {
 			console.error('Error updating order:', err);
 			throw err;
@@ -283,6 +386,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 				repeatOrder,
 				updateOrderStatus,
 				markOrderReady,
+				loadVendorOrders,
+				refreshOrders,
 			}}
 		>
 			{children}

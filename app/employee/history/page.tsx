@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, Package, Clock, CheckCircle, XCircle, Repeat } from 'lucide-react';
+import { ChevronLeft, Package, Clock, CheckCircle, XCircle, Repeat, Calendar } from 'lucide-react';
 
 export default function OrderHistory() {
   const router = useRouter();
@@ -84,6 +84,23 @@ export default function OrderHistory() {
                         Order ID: <span className="font-bold text-blue-600">{order.orderId}</span>
                       </p>
                       <p className="text-xs text-gray-500 mt-1">{order.date}</p>
+                      {order.reservationType && (
+                        <div className="flex gap-2 mt-2">
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
+                            order.reservationType === 'pre-order' 
+                              ? 'bg-purple-100 text-purple-800 border border-purple-300' 
+                              : 'bg-orange-100 text-orange-800 border border-orange-300'
+                          }`}>
+                            <Calendar size={12} />
+                            {order.reservationType === 'pre-order' ? 'Pre-Order' : 'Late Meal'}
+                          </span>
+                          {order.reservationDate && order.reservationTime && (
+                            <span className="text-xs text-gray-600">
+                              {order.reservationDate} at {order.reservationTime}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className={`px-3 py-1 rounded-full text-xs font-semibold border flex items-center gap-1 ${getStatusColor(order.status)}`}>
                       {getStatusIcon(order.status)}

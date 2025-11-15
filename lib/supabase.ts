@@ -27,6 +27,9 @@ export interface DBOrder {
   total: number
   status: 'pending' | 'preparing' | 'ready' | 'completed'
   payment_method: string
+  reservation_type?: 'late-meal' | 'pre-order'
+  reservation_date?: string
+  reservation_time?: string
   created_at?: string
   updated_at?: string
 }
