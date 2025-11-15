@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import { LogOut, Clock, Package, TrendingUp, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import MobileMenu from '@/components/MobileMenu';
 import type { Order } from '@/context/AuthContext';
 
 export default function VendorDashboard() {
@@ -17,6 +18,11 @@ export default function VendorDashboard() {
     logout();
     router.push('/');
   };
+
+  const mobileMenuLinks = [
+    { label: '📋 Menu Manager', href: '/vendor/menu' },
+    { label: '📦 Orders & QR Scanner', href: '/vendor/orders' },
+  ];
 
   // Initial load of vendor orders
   useEffect(() => {
@@ -108,8 +114,15 @@ export default function VendorDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
+      {/* MOBILE MENU COMPONENT */}
+      <MobileMenu 
+        userName={user?.name || 'Vendor'} 
+        menuLinks={mobileMenuLinks} 
+        onLogout={handleLogout}
+      />
+
+      {/* DESKTOP HEADER */}
+      <header className="bg-white shadow-sm hidden md:block">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-green-600">🏪 Vendor Dashboard</h1>
