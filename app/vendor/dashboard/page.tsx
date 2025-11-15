@@ -47,7 +47,7 @@ export default function VendorDashboard() {
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
-      await updateOrderStatus(orderId, newStatus);
+      await updateOrderStatus(orderId, newStatus as 'pending' | 'preparing' | 'ready' | 'completed' | 'cancelled');
       toast.success(`Order ${orderId} marked as ${newStatus}`, {
         description: `Status updated successfully`,
       });

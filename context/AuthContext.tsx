@@ -45,7 +45,7 @@ interface AuthContextType {
 	addOrder: (order: Order) => Promise<void>;
 	getOrderHistory: () => Order[];
 	repeatOrder: (orderId: string) => void;
-	updateOrderStatus: (orderId: string, status: string) => Promise<void>;
+	updateOrderStatus: (orderId: string, status: Order['status']) => Promise<void>;
 	markOrderReady: (orderId: string) => Promise<void>;
 	loadVendorOrders: () => Promise<void>;
 	refreshOrders: () => Promise<void>;
@@ -108,7 +108,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 				reservationType: dbOrder.reservation_type,
 				reservationDate: dbOrder.reservation_date,
 				reservationTime: dbOrder.reservation_time,
-				status: dbOrder.status,
+				status: dbOrder.status as Order['status'],
 				timestamp: new Date(dbOrder.created_at).getTime(),
 				date: new Date(dbOrder.created_at).toLocaleDateString(),
 			}));
@@ -156,7 +156,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 				reservationType: dbOrder.reservation_type,
 				reservationDate: dbOrder.reservation_date,
 				reservationTime: dbOrder.reservation_time,
-				status: dbOrder.status,
+				status: dbOrder.status as Order['status'],
 				timestamp: new Date(dbOrder.created_at).getTime(),
 				date: new Date(dbOrder.created_at).toLocaleDateString(),
 			}));
@@ -305,39 +305,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 		}
 	};
 
-	const updateOrderStatus = async (orderId: string, status: string) => {
-		try {
-			if (!hasSupabase) {
-				// Update local state only
-				const updated = orders.map(o => o.orderId === orderId ? { ...o, status } : o);
-				setOrders(updated);
-				if (typeof window !== 'undefined') {
-					localStorage.setItem('orderHistory', JSON.stringify(updated));
-				}
-				return;
-			}
+	const updateOrderStatus = async (orderId: string, status: Order['status']) => {
+  try {
+    if (!hasSupabase) {
+      const updated = orders.map(o =>
+        o.orderId === orderId ? { ...o, status } : o
+      );
+      setOrders(updated);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('orderHistory', JSON.stringify(updated));
+      }
+      return;
+    }
 
-			const supabase = getSupabase();
-			if (!supabase) return;
+    const supabase = getSupabase();
+    if (!supabase) return;
 
-			const { error } = await supabase
-				.from('orders')
-				.update({ status, updated_at: new Date() })
-				.eq('order_id', orderId);
+    const { error } = await supabase
+      .from('orders')
+      .update({ status, updated_at: new Date() })
+      .eq('order_id', orderId);
 
-			if (error) throw error;
-			await refreshOrders();
-		} catch (err) {
-			console.error('Error updating order:', err);
-			throw err;
-		}
-	};
+    if (error) throw error;
+    await refreshOrders();
+  } catch (err) {
+    console.error('Error updating order:', err);
+    throw err;
+  }
+};
+
 
 	const markOrderReady = async (orderId: string) => {
 		try {
 			if (!hasSupabase) {
 				// Update local orders
-				const updated = orders.map(o => o.orderId === orderId ? { ...o, status: 'ready' } : o);
+				const updated = orders.map(o => o.orderId === orderId ? { ...o, status: 'ready' as const } : o);
 				setOrders(updated);
 				if (typeof window !== 'undefined') {
 					localStorage.setItem('orderHistory', JSON.stringify(updated));

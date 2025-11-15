@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { supabase, hasSupabase } from '@/lib/supabase';
+import { getSupabase, hasSupabase } from '@/lib/supabase';
 import { ChevronLeft, Check, AlertCircle, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import QRScanner from '@/components/QRScanner';
