@@ -41,7 +41,9 @@ export default function EmployeeHome() {
   const mobileMenuLinks = [
     { label: '📋 Order History', href: '/employee/history' },
     { label: '🗓️ Make a Reservation', href: '/employee/reservation' },
-    { label: '👤 Profile', href: '/employee/profile' },
+    { label: '💰 Spending Tracker', href: '/employee/spending' },
+    { label: '🎁 Request Items', href: '/employee/request-item' },
+    { label: '🔍 Discover & Share', href: '/employee/discover' },
   ];
 
   return (
@@ -68,8 +70,14 @@ export default function EmployeeHome() {
             <Link href="/employee/reservation" className="text-blue-600 hover:underline">
               🗓️ Make a Reservation
             </Link>
-            <Link href="/employee/profile" className="text-blue-600 hover:underline">
-              👤 Profile
+            <Link href="/employee/spending" className="text-blue-600 hover:underline">
+              💰 Spending Tracker
+            </Link>
+            <Link href="/employee/request-item" className="text-blue-600 hover:underline">
+              🎁 Request Items
+            </Link>
+            <Link href="/employee/discover" className="text-blue-600 hover:underline">
+              🔍 Discover
             </Link>
             <button
               onClick={handleLogout}
@@ -125,6 +133,32 @@ export default function EmployeeHome() {
             </div>
           </div>
         )}
+
+        {/* Quick Action Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <Link href="/employee/request-item">
+            <div className="bg-linear-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-6 hover:shadow-lg transition cursor-pointer">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold text-green-800">🎁 Request Items</h3>
+                  <p className="text-green-700 text-sm mt-1">Ask vendors for your favorite items</p>
+                </div>
+                <span className="text-4xl">→</span>
+              </div>
+            </div>
+          </Link>
+          <Link href="/employee/discover">
+            <div className="bg-linear-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-lg p-6 hover:shadow-lg transition cursor-pointer">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold text-purple-800">🔍 Discover & Share</h3>
+                  <p className="text-purple-700 text-sm mt-1">Find unexplored items and share with friends</p>
+                </div>
+                <span className="text-4xl">→</span>
+              </div>
+            </div>
+          </Link>
+        </div>
 
         {/* Vendor Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

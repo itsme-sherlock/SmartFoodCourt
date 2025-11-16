@@ -12,7 +12,7 @@ import { supabase } from '@/lib/supabase';
 
 export default function VendorDashboard() {
   const router = useRouter();
-  const { user, logout, orders, updateOrderStatus, refreshOrders, loadVendorOrders } = useAuth();
+  const { user, logout, orders, updateOrderStatus, markOrderReady, refreshOrders, loadVendorOrders } = useAuth();
   const [vendorOrders, setVendorOrders] = useState<Order[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'scanner'>('dashboard');
@@ -20,6 +20,7 @@ export default function VendorDashboard() {
   const [completedOrders, setCompletedOrders] = useState<Set<string>>(new Set());
   const [showQRModal, setShowQRModal] = useState(false);
   const [selectedOrderForQR, setSelectedOrderForQR] = useState<string | null>(null);
+  const [lastStatusChange, setLastStatusChange] = useState<{ orderId: string; status: string; time: number } | null>(null);
 
   const handleLogout = () => {
     logout();
@@ -28,6 +29,7 @@ export default function VendorDashboard() {
 
   const mobileMenuLinks = [
     { label: '📋 Menu Manager', href: '/vendor/menu' },
+    { label: '📊 Forecasting & Analytics', href: '/vendor/forecasting' },
   ];
 
   // Initial load of vendor orders
@@ -81,12 +83,13 @@ export default function VendorDashboard() {
             total: dbOrder.total,
             paymentMethod: dbOrder.payment_method,
             orderType: 'now' as const,
-            reservationType: dbOrder.reservation_type,
-            reservationDate: dbOrder.reservation_date,
-            reservationTime: dbOrder.reservation_time,
+            reservationType: dbOrder.reservation_type || undefined,
+            reservationDate: dbOrder.reservation_date || undefined,
+            reservationTime: dbOrder.reservation_time || undefined,
             status: dbOrder.status as Order['status'],
             timestamp: new Date(dbOrder.created_at).getTime(),
             date: new Date(dbOrder.created_at).toLocaleDateString(),
+            dateISO: dbOrder.created_at ? new Date(dbOrder.created_at).toISOString().split('T')[0] : undefined,
           };
 
           // Check if the order belongs to this vendor
@@ -117,10 +120,37 @@ export default function VendorDashboard() {
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
-      await updateOrderStatus(orderId, newStatus as 'pending' | 'preparing' | 'ready' | 'completed' | 'cancelled');
-      toast.success(`Order ${orderId} marked as ${newStatus}`, {
-        description: `Status updated successfully`,
-      });
+      if (newStatus === 'ready') {
+        await markOrderReady(orderId);
+      } else {
+        await updateOrderStatus(orderId, newStatus as 'pending' | 'preparing' | 'ready' | 'completed' | 'cancelled');
+      }
+
+      // Update local vendor orders state immediately
+      setVendorOrders((currentOrders) =>
+        currentOrders.map((order) =>
+          order.orderId === orderId ? { ...order, status: newStatus as Order['status'] } : order
+        )
+      );
+        
+      // Track status change for notification
+      setLastStatusChange({ orderId, status: newStatus, time: Date.now() });
+      
+      if (newStatus === 'ready') {
+        toast.success(`Order ${orderId} is READY! 🎉`, {
+          description: `Pickup ready - Customer will be notified`,
+          duration: 5000,
+        });
+      } else {
+        toast.success(`Order ${orderId} marked as ${newStatus}`, {
+          description: `Status updated successfully`,
+        });
+      }
+
+      // Refresh orders from context to stay in sync
+      if (loadVendorOrders) {
+        await loadVendorOrders();
+      }
     } catch (err) {
       toast.error('Failed to update order status');
     }
@@ -167,7 +197,7 @@ export default function VendorDashboard() {
 
   const markOrderAsReady = async (orderId: string) => {
     try {
-      await updateOrderStatus(orderId.toUpperCase(), 'ready');
+      await markOrderReady(orderId.toUpperCase());
       toast.success('Order marked as ready!', {
         description: `Order ${orderId} is now ready for pickup`,
       });
@@ -177,29 +207,33 @@ export default function VendorDashboard() {
     }
   };
 
-  // Today's orders
-  const todayOrders = vendorOrders.filter(order => {
-    const orderDate = new Date(order.timestamp).toDateString();
-    const today = new Date().toDateString();
-    return orderDate === today;
-  });
-
-  // Separate late meal (today) from regular orders
-  const lateMealOrders = todayOrders.filter(o => o.reservationType === 'late-meal' && o.status !== 'completed');
-  const regularOrders = todayOrders.filter(o => !o.reservationType || (o.reservationType !== 'late-meal' && o.reservationType !== 'pre-order'));
-  
-  // Get tomorrow's pre-orders (more flexible date matching)
+  // Use ISO dates for comparisons to avoid locale-dependent mismatches
+  const todayISO = new Date().toISOString().split('T')[0];
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowDateStr = tomorrow.toISOString().split('T')[0];
+  const tomorrowISO = tomorrow.toISOString().split('T')[0];
+
+  const toISO = (order: Order) => order.dateISO || (order.timestamp ? new Date(order.timestamp).toISOString().split('T')[0] : '');
+
+  // Today's orders (compare ISO YYYY-MM-DD using toISO())
+  const todayOrders = vendorOrders.filter(order => {
+    const orderISO = toISO(order);
+    return orderISO === todayISO;
+  });
+
+  // Separate orders into categories
+  const lateMealOrders = todayOrders.filter(o => o.reservationType === 'late-meal' && o.status !== 'completed');
+  const regularOrders = todayOrders.filter(o => !o.reservationType);
+  
+  // Get tomorrow's pre-orders (more flexible date matching) using tomorrowISO
   const preOrders = vendorOrders.filter(order => {
-    // Match pre-orders for tomorrow or any future date (for planning purposes)
+    // Match pre-orders for tomorrow or any future date
     if (order.reservationType !== 'pre-order') return false;
     if (!order.reservationDate) return false;
     
-    // Match if it's tomorrow or later (not today, not past)
-    const orderDate = new Date(order.reservationDate).toISOString().split('T')[0];
-    return orderDate >= tomorrowDateStr;
+    // Match if it's tomorrow or later and not completed
+    const orderDate = order.reservationDate ? new Date(order.reservationDate).toISOString().split('T')[0] : null;
+    return !!orderDate && orderDate >= tomorrowISO && order.status !== 'completed';
   });
   
   // Count items to prepare for tomorrow
@@ -272,6 +306,9 @@ export default function VendorDashboard() {
             <Link href="/vendor/menu" className="text-green-600 hover:underline">
               📋 Menu Manager
             </Link>
+            <Link href="/vendor/forecasting" className="text-green-600 hover:underline">
+              📊 Analytics
+            </Link>
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
@@ -297,8 +334,56 @@ export default function VendorDashboard() {
           </div>
         </div>
 
+        {/* Status Change Notification */}
+        {lastStatusChange && Date.now() - lastStatusChange.time < 5000 && (
+          <div className={`rounded-lg p-4 mb-6 border-l-4 ${
+            lastStatusChange.status === 'ready'
+              ? 'bg-green-50 border-green-500'
+              : lastStatusChange.status === 'preparing'
+              ? 'bg-blue-50 border-blue-500'
+              : 'bg-yellow-50 border-yellow-500'
+          }`}>
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">
+                {lastStatusChange.status === 'ready' ? '✅' : lastStatusChange.status === 'preparing' ? '🔄' : '⏳'}
+              </span>
+              <div>
+                <h3 className={`font-semibold ${
+                  lastStatusChange.status === 'ready'
+                    ? 'text-green-800'
+                    : lastStatusChange.status === 'preparing'
+                    ? 'text-blue-800'
+                    : 'text-yellow-800'
+                }`}>
+                  Order {lastStatusChange.orderId} Status Updated
+                </h3>
+                <p className={`text-sm ${
+                  lastStatusChange.status === 'ready'
+                    ? 'text-green-700'
+                    : lastStatusChange.status === 'preparing'
+                    ? 'text-blue-700'
+                    : 'text-yellow-700'
+                }`}>
+                  Status changed to <strong>{lastStatusChange.status.toUpperCase()}</strong>
+                  {lastStatusChange.status === 'ready' && ' - Customer will be notified!'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition">
+            <Link href="/vendor/forecasting" className="block">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-gray-600 text-sm">📊 Analytics</p>
+                <TrendingUp className="text-purple-600" size={24} />
+              </div>
+              <p className="text-xl font-bold text-purple-600">View Insights</p>
+              <p className="text-xs text-gray-500 mt-1">30-day trends & predictions</p>
+            </Link>
+          </div>
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between mb-2">
               <p className="text-gray-600 text-sm">Today's Orders</p>
@@ -324,14 +409,6 @@ export default function VendorDashboard() {
             </div>
             <p className="text-3xl font-bold text-yellow-600">{readyOrders.length}</p>
             <p className="text-xs text-gray-500 mt-1">Awaiting collection</p>
-          </div>
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-gray-600 text-sm">Tomorrow Prep</p>
-              <Calendar className="text-purple-600" size={24} />
-            </div>
-            <p className="text-3xl font-bold text-purple-600">{tomorrowItemCount}</p>
-            <p className="text-xs text-gray-500 mt-1">Items to prepare</p>
           </div>
         </div>
 
@@ -364,17 +441,29 @@ export default function VendorDashboard() {
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-bold text-gray-800">₹{order.total.toFixed(2)}</p>
-                      <select
-                        value={order.status}
-                        onChange={(e) => handleStatusChange(order.orderId, e.target.value)}
-                        className="border-2 border-red-300 rounded-lg px-2 py-1 font-semibold mt-2 focus:outline-none focus:ring-2 focus:ring-red-500"
-                      >
-                        {getStatusOptions(order.status).map(status => (
-                          <option key={status} value={status}>
-                            {status.charAt(0).toUpperCase() + status.slice(1)}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="flex items-center gap-2 mt-2">
+                        <select
+                          value={order.status}
+                          onChange={(e) => handleStatusChange(order.orderId, e.target.value)}
+                          className="border-2 border-red-300 rounded-lg px-2 py-1 font-semibold focus:outline-none focus:ring-2 focus:ring-red-500"
+                        >
+                          {getStatusOptions(order.status).map(status => (
+                            <option key={status} value={status}>
+                              {status.charAt(0).toUpperCase() + status.slice(1)}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={() => {
+                            setSelectedOrderForQR(order.orderId);
+                            setShowQRModal(true);
+                          }}
+                          className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition"
+                          title="Scan QR to mark as ready"
+                        >
+                          <Camera size={18} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -414,9 +503,29 @@ export default function VendorDashboard() {
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-bold text-gray-800">₹{order.total.toFixed(2)}</p>
-                        <span className="inline-block bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-semibold mt-2">
-                          Pre-Order
-                        </span>
+                        <div className="flex items-center gap-2 mt-2 flex-wrap justify-end">
+                          <select
+                            value={order.status}
+                            onChange={(e) => handleStatusChange(order.orderId, e.target.value)}
+                            className="border-2 border-purple-300 rounded-lg px-2 py-1 font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          >
+                            {getStatusOptions(order.status).map(status => (
+                              <option key={status} value={status}>
+                                {status.charAt(0).toUpperCase() + status.slice(1)}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => {
+                              setSelectedOrderForQR(order.orderId);
+                              setShowQRModal(true);
+                            }}
+                            className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition"
+                            title="Scan QR to mark as ready"
+                          >
+                            <Camera size={18} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -10,6 +10,8 @@ export default function OrderHistory() {
   const router = useRouter();
   const { getOrderHistory, repeatOrder, user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [readyNotifications, setReadyNotifications] = useState<Set<string>>(new Set());
+  const [dismissedNotifications, setDismissedNotifications] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const initialOrders = getOrderHistory();
@@ -49,11 +51,17 @@ export default function OrderHistory() {
             date: new Date(dbOrder.created_at).toLocaleDateString(),
           };
           
-          setOrders((currentOrders) =>
-            currentOrders.map((order) =>
+          // Check if order status changed to "ready"
+          setOrders((currentOrders) => {
+            const oldOrder = currentOrders.find(o => o.orderId === updatedOrder.orderId);
+            if (oldOrder && oldOrder.status !== 'ready' && updatedOrder.status === 'ready') {
+              // New ready notification!
+              setReadyNotifications((prev) => new Set([...prev, updatedOrder.orderId]));
+            }
+            return currentOrders.map((order) =>
               order.orderId === updatedOrder.orderId ? updatedOrder : order
-            )
-          );
+            );
+          });
         }
       )
       .subscribe();
@@ -106,6 +114,39 @@ export default function OrderHistory() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* Ready Notifications */}
+        {Array.from(readyNotifications).map((orderId) => {
+          if (dismissedNotifications.has(orderId)) return null;
+          const order = orders.find(o => o.orderId === orderId);
+          if (!order) return null;
+          
+          return (
+            <div
+              key={orderId}
+              className="bg-linear-to-r from-green-50 to-emerald-50 border-2 border-green-500 rounded-lg p-4 mb-6 flex justify-between items-start gap-4 shadow-lg"
+            >
+              <div className="flex items-start gap-4 flex-1">
+                <div className="text-4xl animate-bounce">✅</div>
+                <div>
+                  <h3 className="text-xl font-bold text-green-800">Order {orderId} is READY!</h3>
+                  <p className="text-green-700 font-semibold mt-1">
+                    Your food is prepared and ready for pickup! 🎉
+                  </p>
+                  <p className="text-sm text-green-600 mt-2">
+                    {order.items.length} items • Total: ₹{order.total.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setDismissedNotifications((prev) => new Set([...prev, orderId]))}
+                className="text-green-600 hover:text-green-800 text-2xl shrink-0"
+              >
+                ✕
+              </button>
+            </div>
+          );
+        })}
+        
         <button
           onClick={() => router.back()}
           className="flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-6"

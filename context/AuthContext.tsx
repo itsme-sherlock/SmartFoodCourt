@@ -30,6 +30,7 @@ export interface Order {
 	status: 'pending' | 'preparing' | 'ready' | 'completed' | 'cancelled';
 	timestamp: number;
 	date: string;
+	dateISO?: string;
 }
 
 interface AuthContextType {
@@ -103,6 +104,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 		if (!user) return;
 		if (!hasSupabase) {
 			// Load from localStorage only
+			if (typeof window !== 'undefined') {
+				const storedOrders = localStorage.getItem('orderHistory');
+				if (storedOrders) {
+					const parsedOrders = JSON.parse(storedOrders);
+					// Filter to only show this user's orders
+					const userOrders = parsedOrders.filter((order: Order) => order.userId === user.id);
+					setOrders(userOrders);
+				}
+			}
 			return;
 		}
 		try {
@@ -128,12 +138,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 				total: dbOrder.total,
 				paymentMethod: dbOrder.payment_method,
 				orderType: 'now' as const,
-				reservationType: dbOrder.reservation_type,
-				reservationDate: dbOrder.reservation_date,
-				reservationTime: dbOrder.reservation_time,
+				reservationType: dbOrder.reservation_type || undefined,
+				reservationDate: dbOrder.reservation_date || undefined,
+				reservationTime: dbOrder.reservation_time || undefined,
 				status: dbOrder.status as Order['status'],
 				timestamp: new Date(dbOrder.created_at).getTime(),
 				date: new Date(dbOrder.created_at).toLocaleDateString(),
+				dateISO: dbOrder.created_at ? new Date(dbOrder.created_at).toISOString().split('T')[0] : undefined,
 			}));
 			
 			setOrders(convertedOrders);
@@ -150,6 +161,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 		if (!user?.stall) return;
 		if (!hasSupabase) {
 			// Load from localStorage only
+			if (typeof window !== 'undefined') {
+				const storedOrders = localStorage.getItem('orderHistory');
+				if (storedOrders) {
+					const parsedOrders = JSON.parse(storedOrders);
+					// Filter to only show orders for this vendor
+					const vendorOrders = parsedOrders.filter((order: Order) =>
+						order.items && order.items.some((item: any) => item.vendorId === user.stall)
+					);
+					setOrders(vendorOrders);
+				}
+			}
 			return;
 		}
 		try {
@@ -179,12 +201,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 				total: dbOrder.total,
 				paymentMethod: dbOrder.payment_method,
 				orderType: 'now' as const,
-				reservationType: dbOrder.reservation_type,
-				reservationDate: dbOrder.reservation_date,
-				reservationTime: dbOrder.reservation_time,
+				reservationType: dbOrder.reservation_type || undefined,
+				reservationDate: dbOrder.reservation_date || undefined,
+				reservationTime: dbOrder.reservation_time || undefined,
 				status: dbOrder.status as Order['status'],
 				timestamp: new Date(dbOrder.created_at).getTime(),
 				date: new Date(dbOrder.created_at).toLocaleDateString(),
+				dateISO: dbOrder.created_at ? new Date(dbOrder.created_at).toISOString().split('T')[0] : undefined,
 			}));
 
 			const vendorOrders = allOrders.filter(order => 
@@ -245,11 +268,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	const addOrder = async (order: Order) => {
 		try {
 			if (!hasSupabase) {
-				// Fallback: just save locally
-				const updatedOrders = [order, ...orders];
-				setOrders(updatedOrders);
+				// Fallback: save to localStorage
 				if (typeof window !== 'undefined') {
+					// Load existing orders from localStorage (not from state which may be filtered)
+					const storedOrders = localStorage.getItem('orderHistory');
+					const existingOrders = storedOrders ? JSON.parse(storedOrders) : [];
+					const updatedOrders = [order, ...existingOrders];
+					
+					// Save to localStorage
 					localStorage.setItem('orderHistory', JSON.stringify(updatedOrders));
+					
+					// Update state based on user role
+					if (user?.role === 'vendor' && user?.stall) {
+						// For vendors, only show their orders
+						const vendorOrders = updatedOrders.filter((o: Order) =>
+							o.items && o.items.some((item: any) => item.vendorId === user.stall)
+						);
+						setOrders(vendorOrders);
+					} else {
+						// For employees, show their own orders
+						const userOrders = updatedOrders.filter((o: Order) => o.userId === user?.id);
+						setOrders(userOrders);
+					}
 				}
 				toast.success('Order saved locally (Supabase not configured)');
 				return;
@@ -298,32 +338,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 					toast.warning('Database schema needs update', {
 						description: 'Order saved locally. Please run the migration SQL.',
 					});
-					// Continue with local save below
+					// Save locally only
+					const updatedOrders = [order, ...orders];
+					setOrders(updatedOrders);
+					if (typeof window !== 'undefined') {
+						localStorage.setItem('orderHistory', JSON.stringify(updatedOrders));
+					}
+					toast.success('Order saved locally!');
+					return;
 				} else {
 					throw error;
 				}
-			} else {
-				// Refresh orders after adding
-				await refreshOrders();
 			}
 
 			// Create vendor_order record for QR scanning
 			for (const item of order.items) {
-				await supabase.from('vendor_orders').insert([{
-					order_id: order.orderId,
-					vendor_id: item.vendorId,
-					status: 'pending',
-				}]);
+				try {
+					await supabase.from('vendor_orders').insert([{
+						order_id: order.orderId,
+						vendor_id: item.vendorId,
+						status: 'pending',
+					}]);
+				} catch (vendorOrderErr) {
+					console.warn('Could not create vendor_order record:', vendorOrderErr);
+				}
 			}
 
-			// Update local state
-			const updatedOrders = [order, ...orders];
-			setOrders(updatedOrders);
-			
-			// Also save to localStorage for backup
-			if (typeof window !== 'undefined') {
-				localStorage.setItem('orderHistory', JSON.stringify(updatedOrders));
-			}
+			// Refresh orders from database to get the latest state
+			await refreshOrders();
 			
 			toast.success('Order saved successfully!');
 		} catch (err) {
@@ -347,63 +389,90 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	};
 
 	const updateOrderStatus = async (orderId: string, status: Order['status']) => {
-  try {
-    if (!hasSupabase) {
-      const updated = orders.map(o =>
-        o.orderId === orderId ? { ...o, status } : o
-      );
-      setOrders(updated);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('orderHistory', JSON.stringify(updated));
-      }
-      return;
-    }
+		try {
+			// Update local orders state immediately for better UX
+			const updated = orders.map(o =>
+				o.orderId === orderId ? { ...o, status } : o
+			);
+			setOrders(updated);
+			if (typeof window !== 'undefined') {
+				const storageKey = user?.role === 'vendor' ? 'vendorOrders' : 'orderHistory';
+				localStorage.setItem(storageKey, JSON.stringify(updated));
+			}
 
-    const supabase = getSupabase();
-    if (!supabase) return;
+			// If Supabase is available, try to sync with database
+			if (hasSupabase) {
+				try {
+					const supabase = getSupabase();
+					if (supabase) {
+						const { error } = await supabase
+							.from('orders')
+							.update({ status, updated_at: new Date() })
+							.eq('order_id', orderId);
 
-    const { error } = await supabase
-      .from('orders')
-      .update({ status, updated_at: new Date() })
-      .eq('order_id', orderId);
-
-    if (error) throw error;
-    // The UI should update automatically via Supabase real-time subscription
-  } catch (err) {
-    console.error('Error updating order:', err);
-    throw err;
-  }
-};
+						if (error) {
+							console.warn('Warning: Could not sync with database:', error.message);
+							// Local update already succeeded, so don't throw
+						}
+					}
+				} catch (supabaseErr) {
+					console.warn('Supabase sync failed, but local update succeeded:', supabaseErr);
+					// Local update already succeeded, so don't throw
+				}
+			}
+		} catch (err) {
+			console.error('Error updating order status:', err);
+			throw err;
+		}
+	};
 
 
 	const markOrderReady = async (orderId: string) => {
 		try {
-			if (!hasSupabase) {
-				// Update local orders
-				const updated = orders.map(o => o.orderId === orderId ? { ...o, status: 'ready' as const } : o);
-				setOrders(updated);
-				if (typeof window !== 'undefined') {
-					localStorage.setItem('orderHistory', JSON.stringify(updated));
-				}
-				toast.success('Order marked as ready (local)');
-				return;
+			// Update local state immediately for better UX
+			const updatedLocal = orders.map(o => o.orderId === orderId ? { ...o, status: 'ready' as const } : o);
+			setOrders(updatedLocal);
+			if (typeof window !== 'undefined') {
+				const storageKey = user?.role === 'vendor' ? 'vendorOrders' : 'orderHistory';
+				localStorage.setItem(storageKey, JSON.stringify(updatedLocal));
 			}
 
-			const supabase = getSupabase();
-			if (!supabase) return;
+			// If Supabase is available, try to sync with database
+			if (hasSupabase) {
+				try {
+					const supabase = getSupabase();
+					if (supabase) {
+						// Update main orders table
+						const { error: orderError } = await supabase
+							.from('orders')
+							.update({ status: 'ready', updated_at: new Date() })
+							.eq('order_id', orderId);
 
-			// Update vendor_orders table
-			const { error: vendorError } = await supabase
-				.from('vendor_orders')
-				.update({ status: 'ready', completed_at: new Date() })
-				.eq('order_id', orderId);
+						if (orderError) {
+							console.warn('Warning: Could not sync order status with database:', orderError.message);
+						}
 
-			if (vendorError) throw vendorError;
+						// Try to update vendor_orders table if it exists
+						try {
+							const { error: vendorOrderError } = await supabase
+								.from('vendor_orders')
+								.update({ status: 'ready', completed_at: new Date() })
+								.eq('order_id', orderId);
 
-			// Update main orders table
-			await updateOrderStatus(orderId, 'ready');
-			
-			toast.success('Order marked as ready!');
+							if (vendorOrderError) {
+								console.warn('Warning: Could not sync vendor_orders:', vendorOrderError.message);
+							}
+						} catch (vendorErr) {
+							// vendor_orders table might not exist, that's okay
+							console.warn('vendor_orders table not available:', vendorErr);
+						}
+					}
+				} catch (supabaseErr) {
+					console.warn('Supabase sync failed, but local update succeeded:', supabaseErr);
+				}
+			}
+
+			toast.success('Order marked as ready! 🎉');
 		} catch (err) {
 			console.error('Error marking order ready:', err);
 			toast.error('Failed to mark order as ready');
