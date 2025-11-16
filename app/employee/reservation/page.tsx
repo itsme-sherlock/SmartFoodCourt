@@ -191,19 +191,6 @@ export default function ReservationPage() {
 
             {/* Late Meal Reservation Tab */}
             <TabsContent value="late-meal">
-              {/* Smart Recommendation */}
-              <div className="mb-6">
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">💡</span>
-                    <p className="text-sm text-yellow-800">
-                      <strong>Smart Tip:</strong> Based on hybrid patterns, North Indian Delights will have 
-                      fresh Butter Chicken at 1:00 PM tomorrow (low crowd expected)
-                    </p>
-                  </div>
-                </div>
-              </div>
-
               {/* Quick Repeat Section */}
               <div className="mb-8">
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">One-Tap Repeat</h2>

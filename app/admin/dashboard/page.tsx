@@ -60,6 +60,7 @@ export default function AdminDashboard() {
           { href: '/admin/vendors', label: 'Vendors', icon: '🏪' },
           { href: '/admin/analytics', label: 'Analytics', icon: '📈' },
           { href: '/admin/billing', label: 'Billing', icon: '💰' },
+          { href: '/admin/hybrid-policies', label: 'Hybrid', icon: '🔄' },
           { href: '/admin/campaigns', label: 'Campaigns', icon: '🎉' }
         ]}
         onLogout={handleLogout}
