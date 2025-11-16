@@ -2,11 +2,66 @@
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, Package, Clock, CheckCircle, XCircle, Repeat, Calendar } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Order } from '@/lib/types';
 
 export default function OrderHistory() {
   const router = useRouter();
-  const { getOrderHistory, repeatOrder } = useAuth();
-  const orders = getOrderHistory();
+  const { getOrderHistory, repeatOrder, user } = useAuth();
+  const [orders, setOrders] = useState<Order[]>([]);
+
+  useEffect(() => {
+    const initialOrders = getOrderHistory();
+    setOrders(initialOrders);
+  }, [getOrderHistory]);
+
+  useEffect(() => {
+    if (!user?.id || !supabase) return;
+
+    const channel = supabase
+      .channel(`realtime-orders-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const dbOrder = payload.new as any;
+          const updatedOrder: Order = {
+            orderId: dbOrder.order_id,
+            userId: dbOrder.user_id,
+            userName: dbOrder.user_name,
+            items: dbOrder.items,
+            subtotal: dbOrder.total * 0.9,
+            tax: dbOrder.total * 0.1,
+            total: dbOrder.total,
+            paymentMethod: dbOrder.payment_method,
+            orderType: 'now' as const,
+            reservationType: dbOrder.reservation_type,
+            reservationDate: dbOrder.reservation_date,
+            reservationTime: dbOrder.reservation_time,
+            status: dbOrder.status as Order['status'],
+            timestamp: new Date(dbOrder.created_at).getTime(),
+            date: new Date(dbOrder.created_at).toLocaleDateString(),
+          };
+          
+          setOrders((currentOrders) =>
+            currentOrders.map((order) =>
+              order.orderId === updatedOrder.orderId ? updatedOrder : order
+            )
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id]);
 
   const getStatusColor = (status: string) => {
     switch (status) {

@@ -7,6 +7,7 @@ import { LogOut, Clock, Package, TrendingUp, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import MobileMenu from '@/components/MobileMenu';
 import type { Order } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 export default function VendorDashboard() {
   const router = useRouter();
@@ -41,15 +42,65 @@ export default function VendorDashboard() {
     }
   }, [orders, user?.stall]);
 
-  // Auto-refresh orders every 10 seconds
+  // Subscribe to real-time order updates
   useEffect(() => {
-    const interval = setInterval(async () => {
-      setIsRefreshing(true);
-      await refreshOrders();
-      setTimeout(() => setIsRefreshing(false), 500);
-    }, 10000);
-    return () => clearInterval(interval);
-  }, [refreshOrders]);
+    if (!user?.stall || !supabase) return;
+
+    const channel = supabase
+      .channel(`vendor-orders-${user.stall}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+        },
+        (payload) => {
+          console.log('Vendor received update:', payload);
+          const dbOrder = payload.new as any;
+          
+          // Transform the database payload to an Order object
+          const incomingOrder: Order = {
+            orderId: dbOrder.order_id,
+            userId: dbOrder.user_id,
+            userName: dbOrder.user_name,
+            items: dbOrder.items,
+            subtotal: dbOrder.total * 0.9, // Assuming tax is 10%
+            tax: dbOrder.total * 0.1,
+            total: dbOrder.total,
+            paymentMethod: dbOrder.payment_method,
+            orderType: 'now' as const,
+            reservationType: dbOrder.reservation_type,
+            reservationDate: dbOrder.reservation_date,
+            reservationTime: dbOrder.reservation_time,
+            status: dbOrder.status as Order['status'],
+            timestamp: new Date(dbOrder.created_at).getTime(),
+            date: new Date(dbOrder.created_at).toLocaleDateString(),
+          };
+
+          // Check if the order belongs to this vendor
+          const isRelevant = incomingOrder.items.some(item => item.vendorId === user.stall);
+          if (!isRelevant) {
+            return;
+          }
+
+          if (payload.eventType === 'INSERT') {
+            setVendorOrders((currentOrders) => [incomingOrder, ...currentOrders]);
+          } else if (payload.eventType === 'UPDATE') {
+            setVendorOrders((currentOrders) =>
+              currentOrders.map((order) =>
+                order.orderId === incomingOrder.orderId ? incomingOrder : order
+              )
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.stall, supabase]);
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
@@ -146,6 +197,21 @@ export default function VendorDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
+        {/* Hybrid Policy Optimization Alert */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">⚠️</span>
+            <div>
+              <h3 className="font-semibold text-blue-800">Tomorrow's Smart Prep Recommendation</h3>
+              <p className="text-sm text-blue-700">
+                Prepare <strong>40% less food</strong> • Expected: 25 employees (vs usual 60) • 
+                <span className="font-semibold text-green-600">Save ₹3,200</span>
+              </p>
+            </div>
+            <span className="bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-semibold ml-auto">AI POWERED</span>
+          </div>
+        </div>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-lg shadow-md p-6">
@@ -210,7 +276,7 @@ export default function VendorDashboard() {
                 .map(order => (
                   <div
                     key={order.orderId}
-                    className="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-md transition"
+                    className="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-200 hover:shadow-md transition flex-wrap"
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
@@ -237,12 +303,12 @@ export default function VendorDashboard() {
                         )}
                       </p>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 flex-wrap">
                       <div className="text-right mr-4">
                         <p className="text-sm text-gray-500">Total</p>
                         <p className="text-lg font-bold text-gray-800">₹{order.total.toFixed(2)}</p>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 text-xs sm:text-sm">
                         <span className={`px-4 py-2 rounded-lg font-semibold text-white ${getStatusColor(order.status)}`}>
                           {order.status.toUpperCase()}
                         </span>

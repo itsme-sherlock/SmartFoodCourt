@@ -49,6 +49,34 @@ interface AuthContextType {
 	markOrderReady: (orderId: string) => Promise<void>;
 	loadVendorOrders: () => Promise<void>;
 	refreshOrders: () => Promise<void>;
+	getAdminStats: () => Promise<{
+		totalVendors: number;
+		todayOrders: number;
+		activeOrders: number;
+		todayRevenue: number;
+		avgWaitTime: string;
+	}>;
+	getVendorPerformance: () => Promise<Array<{
+		name: string;
+		orders: number;
+		rating: number;
+		waste: string;
+		revenue: number;
+	}>>;
+	getBillingTransactions: () => Promise<Array<{
+		id: string;
+		orderId: string;
+		vendorId: string;
+		vendorName: string;
+		customerName: string;
+		amount: number;
+		commission: number;
+		netAmount: number;
+		paymentMethod: string;
+		status: string;
+		timestamp: Date;
+		items: string[];
+	}>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -59,14 +87,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 	const [cart, setCart] = useState<any[]>([]);
 	const [orders, setOrders] = useState<Order[]>([]);
 
-	// Load orders from localStorage and Supabase on mount
+	// Load user and orders from localStorage on mount
 	useEffect(() => {
 		if (typeof window !== 'undefined') {
+			// Load user from localStorage
+			const storedUser = localStorage.getItem('currentUser');
+			if (storedUser) {
+				const userData = JSON.parse(storedUser);
+				setUser(userData);
+				setRole(userData.role);
+			}
+
+			// Load orders from localStorage
 			const storedOrders = localStorage.getItem('orderHistory');
 			if (storedOrders) {
 				setOrders(JSON.parse(storedOrders));
 			}
 		}
+	}, []);
+
+	// Load data when user changes
+	useEffect(() => {
 		if (user?.id) {
 			if (user.role === 'vendor' && user.stall) {
 				loadVendorOrders();
@@ -133,17 +174,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 			const supabase = getSupabase();
 			if (!supabase) return;
 			
+			const yesterday = new Date();
+        	yesterday.setDate(yesterday.getDate() - 1);
+
 			// Load all orders that contain items from this vendor
 			const { data, error } = await supabase
 				.from('orders')
 				.select('*')
-				.eq('vendor_id', user.stall)
+				.gte('created_at', yesterday.toISOString())
 				.order('created_at', { ascending: false });
 
 			if (error) throw error;
 
 			// Convert Supabase data to Order format
-			const convertedOrders = (data || []).map((dbOrder: any) => ({
+			const allOrders = (data || []).map((dbOrder: any) => ({
 				orderId: dbOrder.order_id,
 				userId: dbOrder.user_id,
 				userName: dbOrder.user_name,
@@ -160,11 +204,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 				timestamp: new Date(dbOrder.created_at).getTime(),
 				date: new Date(dbOrder.created_at).toLocaleDateString(),
 			}));
+
+			const vendorOrders = allOrders.filter(order => 
+				order.items.some(item => item.vendorId === user.stall)
+			);
 			
-			setOrders(convertedOrders);
+			setOrders(vendorOrders);
 			// Also update localStorage
 			if (typeof window !== 'undefined') {
-				localStorage.setItem('vendorOrders', JSON.stringify(convertedOrders));
+				localStorage.setItem('vendorOrders', JSON.stringify(vendorOrders));
 			}
 		} catch (err) {
 			console.error('Error loading vendor orders:', err);
@@ -181,12 +229,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 	const login = (userData: User) => {
 		setUser(userData);
+		setRole(userData.role);
+		
+		// Save user to localStorage for persistence
+		if (typeof window !== 'undefined') {
+			localStorage.setItem('currentUser', JSON.stringify(userData));
+		}
 	};
 
 	const logout = () => {
 		setUser(null);
 		setRole(null);
 		setCart([]);
+		
+		// Clear user from localStorage
+		if (typeof window !== 'undefined') {
+			localStorage.removeItem('currentUser');
+		}
 	};
 
 	const addToCart = (item: any) => {
@@ -327,7 +386,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .eq('order_id', orderId);
 
     if (error) throw error;
-    await refreshOrders();
+    // The UI should update automatically via Supabase real-time subscription
   } catch (err) {
     console.error('Error updating order:', err);
     throw err;
@@ -370,6 +429,199 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 		}
 	};
 
+	// Admin functions for dashboard stats
+	const getAdminStats = async () => {
+		if (!hasSupabase) {
+			return {
+				totalVendors: 4, // from mockVendors
+				todayOrders: 0,
+				activeOrders: 0,
+				todayRevenue: 0,
+				avgWaitTime: '8 mins', // mock
+			};
+		}
+
+		try {
+			const supabase = getSupabase();
+			if (!supabase) return { totalVendors: 4, todayOrders: 0, activeOrders: 0, todayRevenue: 0, avgWaitTime: '8 mins' };
+
+			const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+			// Get today's orders count
+			const { data: todayOrdersData, error: todayError } = await supabase
+				.from('orders')
+				.select('order_id')
+				.gte('created_at', `${today}T00:00:00.000Z`)
+				.lt('created_at', `${today}T23:59:59.999Z`);
+
+			if (todayError) throw todayError;
+
+			// Get active orders (pending, preparing, ready)
+			const { data: activeOrdersData, error: activeError } = await supabase
+				.from('orders')
+				.select('order_id')
+				.in('status', ['pending', 'preparing', 'ready']);
+
+			if (activeError) throw activeError;
+
+			// Get today's revenue
+			const { data: revenueData, error: revenueError } = await supabase
+				.from('orders')
+				.select('total')
+				.gte('created_at', `${today}T00:00:00.000Z`)
+				.lt('created_at', `${today}T23:59:59.999Z`);
+
+			if (revenueError) throw revenueError;
+
+			const todayRevenue = revenueData?.reduce((sum, order) => sum + (order.total || 0), 0) || 0;
+
+			return {
+				totalVendors: 4, // from mockVendors.length
+				todayOrders: todayOrdersData?.length || 0,
+				activeOrders: activeOrdersData?.length || 0,
+				todayRevenue,
+				avgWaitTime: '8 mins', // mock for now
+			};
+		} catch (err) {
+			console.error('Error getting admin stats:', err);
+			return {
+				totalVendors: 4,
+				todayOrders: 0,
+				activeOrders: 0,
+				todayRevenue: 0,
+				avgWaitTime: '8 mins',
+			};
+		}
+	};
+
+	const getVendorPerformance = async () => {
+		if (!hasSupabase) {
+			// Return mock data
+			return [
+				{ name: 'North Indian Delights', orders: 45, rating: 4.5, waste: '8%', revenue: 11250 },
+				{ name: 'South Indian Express', orders: 38, rating: 4.2, waste: '6%', revenue: 9500 },
+				{ name: 'Grill Master', orders: 22, rating: 4.7, waste: '5%', revenue: 8750 },
+				{ name: 'Happy Bites', orders: 15, rating: 4.0, waste: '10%', revenue: 3750 },
+			];
+		}
+
+		try {
+			const supabase = getSupabase();
+			if (!supabase) return [];
+
+			const today = new Date().toISOString().split('T')[0];
+
+			// Get vendor performance data
+			const { data, error } = await supabase
+				.from('orders')
+				.select('vendor_id, vendor_name, total')
+				.gte('created_at', `${today}T00:00:00.000Z`)
+				.lt('created_at', `${today}T23:59:59.999Z`);
+
+			if (error) throw error;
+
+			// Group by vendor
+			const vendorStats = (data || []).reduce((acc: any, order) => {
+				const vendorId = order.vendor_id;
+				if (!acc[vendorId]) {
+					acc[vendorId] = {
+						name: order.vendor_name,
+						orders: 0,
+						revenue: 0,
+					};
+				}
+				acc[vendorId].orders += 1;
+				acc[vendorId].revenue += order.total || 0;
+				return acc;
+			}, {});
+
+			// Convert to array and add mock data for ratings and waste
+			const mockWaste = { vendor_1: '8%', vendor_2: '6%', vendor_3: '5%', vendor_4: '10%' };
+			const mockRatings = { vendor_1: 4.5, vendor_2: 4.2, vendor_3: 4.7, vendor_4: 4.0 };
+
+			return Object.entries(vendorStats).map(([vendorId, stats]: [string, any]) => ({
+				name: stats.name,
+				orders: stats.orders,
+				rating: mockRatings[vendorId as keyof typeof mockRatings] || 4.0,
+				waste: mockWaste[vendorId as keyof typeof mockWaste] || '5%',
+				revenue: stats.revenue,
+			}));
+		} catch (err) {
+			console.error('Error getting vendor performance:', err);
+			return [];
+		}
+	};
+
+	const getBillingTransactions = async () => {
+		if (!hasSupabase) {
+			// Return mock data for demo
+			return [
+				{
+					id: 'TXN001',
+					orderId: 'ORD-001',
+					vendorId: 'vendor_1',
+					vendorName: 'North Indian Delights',
+					customerName: 'Raj Kumar',
+					amount: 350.00,
+					commission: 35.00,
+					netAmount: 315.00,
+					paymentMethod: 'UPI',
+					status: 'Completed',
+					timestamp: new Date('2025-11-16T12:30:00'),
+					items: ['Butter Chicken', 'Naan', 'Rice'],
+				},
+				{
+					id: 'TXN002',
+					orderId: 'ORD-002',
+					vendorId: 'vendor_2',
+					vendorName: 'South Indian Express',
+					customerName: 'Priya Singh',
+					amount: 180.00,
+					commission: 18.00,
+					netAmount: 162.00,
+					paymentMethod: 'Card',
+					status: 'Completed',
+					timestamp: new Date('2025-11-16T11:45:00'),
+					items: ['Masala Dosa', 'Filter Coffee'],
+				},
+			];
+		}
+
+		try {
+			const supabase = getSupabase();
+			if (!supabase) return [];
+
+			// Get all orders for billing view
+			const { data, error } = await supabase
+				.from('orders')
+				.select('*')
+				.order('created_at', { ascending: false });
+
+			if (error) throw error;
+
+			// Convert to billing transaction format
+			const transactions = (data || []).map((order: any, index: number) => ({
+				id: `TXN${String(index + 1).padStart(3, '0')}`,
+				orderId: order.order_id,
+				vendorId: order.vendor_id,
+				vendorName: order.vendor_name,
+				customerName: order.user_name,
+				amount: order.total,
+				commission: order.total * 0.1, // 10% commission
+				netAmount: order.total * 0.9,
+				paymentMethod: order.payment_method || 'UPI',
+				status: order.status === 'completed' ? 'Completed' : 'Pending',
+				timestamp: new Date(order.created_at),
+				items: order.items.map((item: any) => item.name),
+			}));
+
+			return transactions;
+		} catch (err) {
+			console.error('Error getting billing transactions:', err);
+			return [];
+		}
+	};
+
 	return (
 		<AuthContext.Provider
 			value={{
@@ -390,6 +642,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 				markOrderReady,
 				loadVendorOrders,
 				refreshOrders,
+				getAdminStats,
+				getVendorPerformance,
+				getBillingTransactions,
 			}}
 		>
 			{children}

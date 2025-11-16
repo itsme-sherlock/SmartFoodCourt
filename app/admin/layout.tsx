@@ -8,7 +8,7 @@ export default function AdminDashboardLayout({
 }) {
   return (
     <div>
-      <h1>admin Dashboard</h1>
+      {/* <h1>admin Dashboard</h1> */}
       <main>{children}</main>
     </div>
   );

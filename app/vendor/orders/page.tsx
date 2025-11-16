@@ -110,7 +110,7 @@ export default function VendorOrders() {
           <h2 className="text-xl font-bold mb-4">🔍 QR Code Scanner</h2>
           
           {/* Manual Input */}
-          <div className="flex gap-3 mb-4">
+          <div className="flex gap-3 mb-4 sm:flex-row flex-col">
             <input
               type="text"
               placeholder="Scan QR code or paste Order ID..."

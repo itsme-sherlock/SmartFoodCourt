@@ -10,13 +10,20 @@ interface MenuLink {
 }
 
 interface MobileMenuProps {
-  userName: string;
-  menuLinks: MenuLink[];
+  userName?: string;
+  user?: { name?: string; role?: string };
+  menuLinks?: MenuLink[];
+  links?: MenuLink[];
   onLogout: () => void;
 }
 
-export default function MobileMenu({ userName, menuLinks, onLogout }: MobileMenuProps) {
+export default function MobileMenu({ userName, user, menuLinks, links, onLogout }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  
+  // Support both prop names: menuLinks or links
+  const finalMenuLinks = menuLinks || links || [];
+  // Support both userName or user.name
+  const displayName = userName || user?.name || 'Guest';
 
   const handleLogout = () => {
     setIsOpen(false);
@@ -29,7 +36,7 @@ export default function MobileMenu({ userName, menuLinks, onLogout }: MobileMenu
       <div className="md:hidden w-full bg-white shadow-sm px-4 py-4 flex justify-between items-center">
         <div>
           <h1 className="text-xl font-bold text-blue-600">🍽️ Food Court</h1>
-          <p className="text-gray-600 text-sm">Welcome, {userName}</p>
+          <p className="text-gray-600 text-sm">Welcome, {displayName}</p>
         </div>
         <button 
           onClick={() => setIsOpen(!isOpen)}
@@ -43,7 +50,7 @@ export default function MobileMenu({ userName, menuLinks, onLogout }: MobileMenu
       {/* Mobile Dropdown Menu - Only shows when open */}
       {isOpen && (
         <div className="md:hidden bg-white shadow-md p-4 space-y-4 border-b">
-          {menuLinks.map((link) => (
+          {finalMenuLinks && finalMenuLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}

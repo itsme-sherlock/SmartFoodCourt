@@ -8,7 +8,7 @@ export default function VendorDashboardLayout({
 }) {
   return (
     <div>
-      <h1>Vendor Dashboard</h1>
+      {/* <h1>Vendor Dashboard</h1> */}
       <main>{children}</main>
     </div>
   );
