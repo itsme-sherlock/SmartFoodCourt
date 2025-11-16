@@ -27,3 +27,26 @@ export interface Order {
   user_id?: string;
   [key: string]: any;
 }
+
+export interface VendorPerformance {
+  name: string;
+  orders: number;
+  rating: number;
+  waste: string;
+  revenue: number;
+}
+
+export interface BillingTransaction {
+  id: string;
+  orderId: string;
+  vendorId: string;
+  vendorName: string;
+  customerName: string;
+  amount: number;
+  commission: number;
+  netAmount: number;
+  paymentMethod: string;
+  status: string;
+  timestamp: Date;
+  items: string[];
+}

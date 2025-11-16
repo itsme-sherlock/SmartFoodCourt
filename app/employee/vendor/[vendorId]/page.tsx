@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { mockVendors, mockMenuItems } from '@/lib/mockData';
-import { ShoppingCart, ChevronLeft, AlertCircle } from 'lucide-react';
+import { ShoppingCart, ChevronLeft, AlertCircle, Clock, Flame, CheckCircle, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function VendorMenu() {
@@ -15,11 +15,25 @@ export default function VendorMenu() {
   const items = vendorId ? mockMenuItems[vendorId as keyof typeof mockMenuItems] || [] : [];
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
+  const [statusFilter, setStatusFilter] = useState<'all' | 'ready' | 'preparing' | 'scheduled' | 'finished'>('all');
 
   if (!vendor) return <div>Vendor not found</div>;
 
   const unexploredItems = items.filter(item => item.orderCount < 10);
   const getPrice = (item: any, size: string) => item.sizes[size as keyof typeof item.sizes] || item.basePrice;
+
+  // Map item status to preparation status
+  const getPreparationStatus = (itemStatus: string): 'ready' | 'preparing' | 'scheduled' | 'finished' => {
+    if (itemStatus === 'Ready') return 'ready';
+    if (itemStatus === 'Preparing') return 'preparing';
+    if (itemStatus === 'Sold Out') return 'finished';
+    return 'scheduled';
+  };
+
+  // Filter items based on selected status filter
+  const filteredItems = statusFilter === 'all' 
+    ? items 
+    : items.filter(item => getPreparationStatus(item.status) === statusFilter);
 
   const handleAddToCart = (item: any) => {
     const quantity = quantities[item.id] || 1;
@@ -75,6 +89,67 @@ export default function VendorMenu() {
       </div>
 
       <main className="max-w-6xl mx-auto px-4 py-8">
+        {/* Preparation Status Filter */}
+        <div className="mb-8">
+          <h2 className="text-lg font-bold text-gray-800 mb-4">Filter by Preparation Status</h2>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => setStatusFilter('all')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                statusFilter === 'all'
+                  ? 'bg-gray-800 text-white'
+                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+              }`}
+            >
+              📋 All Items
+            </button>
+            <button
+              onClick={() => setStatusFilter('ready')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                statusFilter === 'ready'
+                  ? 'bg-green-500 text-white'
+                  : 'bg-green-100 text-green-800 hover:bg-green-200'
+              }`}
+            >
+              <CheckCircle size={18} /> Ready
+            </button>
+            <button
+              onClick={() => setStatusFilter('preparing')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                statusFilter === 'preparing'
+                  ? 'bg-yellow-500 text-white'
+                  : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+              }`}
+            >
+              <Flame size={18} /> Preparing
+            </button>
+            <button
+              onClick={() => setStatusFilter('scheduled')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                statusFilter === 'scheduled'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+              }`}
+            >
+              <Calendar size={18} /> Scheduled Later
+            </button>
+            <button
+              onClick={() => setStatusFilter('finished')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                statusFilter === 'finished'
+                  ? 'bg-red-500 text-white'
+                  : 'bg-red-100 text-red-800 hover:bg-red-200'
+              }`}
+            >
+              <Clock size={18} /> Finished
+            </button>
+          </div>
+        </div>
+
+        {/* Item Count Info */}
+        <div className="mb-6 text-gray-600 font-semibold">
+          Showing {filteredItems.length} of {items.length} items
+        </div>
         {/* Explore Unexplored */}
         {unexploredItems.length > 0 && (
           <div className="mb-8 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
@@ -99,7 +174,8 @@ export default function VendorMenu() {
 
         {/* Menu Items */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {items.map(item => (
+          {filteredItems.length > 0 ? (
+            filteredItems.map(item => (
             <div key={item.id} className="bg-white rounded-lg shadow-md p-6">
               <div className="flex justify-between items-start mb-3">
                 <div>
@@ -168,7 +244,16 @@ export default function VendorMenu() {
                 </button>
               </div>
             </div>
-          ))}
+          ))
+          ) : (
+            <div className="col-span-1 md:col-span-2 text-center py-12">
+              <div className="text-4xl mb-3">🔍</div>
+              <p className="text-gray-600 font-semibold text-lg">No items found</p>
+              <p className="text-gray-500 text-sm mt-2">
+                There are no {statusFilter === 'all' ? 'items' : statusFilter} items at the moment. Try another status filter!
+              </p>
+            </div>
+          )}
         </div>
       </main>
     </div>

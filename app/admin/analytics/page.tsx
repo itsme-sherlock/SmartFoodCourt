@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { LogOut, BarChart3, TrendingUp, Users, Clock, DollarSign } from 'lucide-react';
 import MobileMenu from '@/components/MobileMenu';
 import { useEffect, useState } from 'react';
+import { VendorPerformance } from '@/lib/types';
 
 export default function AdminAnalytics() {
   const router = useRouter();
@@ -16,7 +17,7 @@ export default function AdminAnalytics() {
     todayRevenue: 0,
     avgWaitTime: '8 mins',
   });
-  const [vendorPerformance, setVendorPerformance] = useState([]);
+  const [vendorPerformance, setVendorPerformance] = useState<VendorPerformance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const handleLogout = () => {

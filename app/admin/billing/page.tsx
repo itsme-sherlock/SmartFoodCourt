@@ -5,12 +5,13 @@ import Link from 'next/link';
 import { LogOut, Receipt, DollarSign, TrendingUp, Calendar, Download, Filter, Search } from 'lucide-react';
 import MobileMenu from '@/components/MobileMenu';
 import { useEffect, useState } from 'react';
+import { BillingTransaction } from '@/lib/types';
 
 export default function AdminBilling() {
   const router = useRouter();
   const { user, logout, getAdminStats, getVendorPerformance } = useAuth();
-  const [vendorTransactions, setVendorTransactions] = useState([]);
-  const [filteredTransactions, setFilteredTransactions] = useState([]);
+  const [vendorTransactions, setVendorTransactions] = useState<BillingTransaction[]>([]);
+  const [filteredTransactions, setFilteredTransactions] = useState<BillingTransaction[]>([]);
   const [selectedVendor, setSelectedVendor] = useState('all');
   const [dateFilter, setDateFilter] = useState('today');
   const [searchTerm, setSearchTerm] = useState('');

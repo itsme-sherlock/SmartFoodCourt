@@ -11,7 +11,7 @@ interface MenuLink {
 
 interface MobileMenuProps {
   userName?: string;
-  user?: { name?: string; role?: string };
+  user?: { name?: string; role?: string } | null;
   menuLinks?: MenuLink[];
   links?: MenuLink[];
   onLogout: () => void;

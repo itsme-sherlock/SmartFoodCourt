@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { LogOut } from 'lucide-react';
 import MobileMenu from '@/components/MobileMenu';
 import { useEffect, useState } from 'react';
+import { VendorPerformance } from '@/lib/types';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -16,7 +17,7 @@ export default function AdminDashboard() {
     todayRevenue: 0,
     avgWaitTime: '8 mins',
   });
-  const [vendorPerformance, setVendorPerformance] = useState([
+  const [vendorPerformance, setVendorPerformance] = useState<VendorPerformance[]>([
     { name: 'North Indian Delights', orders: 45, rating: 4.5, waste: '8%', revenue: 11250 },
     { name: 'South Indian Express', orders: 38, rating: 4.2, waste: '6%', revenue: 9500 },
     { name: 'Grill Master', orders: 22, rating: 4.7, waste: '5%', revenue: 8750 },

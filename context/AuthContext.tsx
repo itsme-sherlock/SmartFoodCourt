@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { getSupabase, hasSupabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { VendorPerformance, BillingTransaction } from '@/lib/types';
 
 export interface User {
 	id: string;
@@ -56,27 +57,8 @@ interface AuthContextType {
 		todayRevenue: number;
 		avgWaitTime: string;
 	}>;
-	getVendorPerformance: () => Promise<Array<{
-		name: string;
-		orders: number;
-		rating: number;
-		waste: string;
-		revenue: number;
-	}>>;
-	getBillingTransactions: () => Promise<Array<{
-		id: string;
-		orderId: string;
-		vendorId: string;
-		vendorName: string;
-		customerName: string;
-		amount: number;
-		commission: number;
-		netAmount: number;
-		paymentMethod: string;
-		status: string;
-		timestamp: Date;
-		items: string[];
-	}>>;
+	getVendorPerformance: () => Promise<VendorPerformance[]>;
+	getBillingTransactions: () => Promise<BillingTransaction[]>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -206,7 +188,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 			}));
 
 			const vendorOrders = allOrders.filter(order => 
-				order.items.some(item => item.vendorId === user.stall)
+				order.items.some((item: any) => item.vendorId === user.stall)
 			);
 			
 			setOrders(vendorOrders);
@@ -494,7 +476,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 		}
 	};
 
-	const getVendorPerformance = async () => {
+	const getVendorPerformance = async (): Promise<VendorPerformance[]> => {
 		if (!hasSupabase) {
 			// Return mock data
 			return [

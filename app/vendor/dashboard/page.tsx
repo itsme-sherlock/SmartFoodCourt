@@ -98,7 +98,9 @@ export default function VendorDashboard() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (supabase) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [user?.stall, supabase]);
 

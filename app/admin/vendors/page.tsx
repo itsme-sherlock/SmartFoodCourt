@@ -6,11 +6,12 @@ import { LogOut, Users, Store, TrendingUp, AlertTriangle } from 'lucide-react';
 import MobileMenu from '@/components/MobileMenu';
 import { useEffect, useState } from 'react';
 import { mockVendors } from '@/lib/mockData';
+import { VendorPerformance } from '@/lib/types';
 
 export default function AdminVendors() {
   const router = useRouter();
   const { user, logout, getVendorPerformance } = useAuth();
-  const [vendorPerformance, setVendorPerformance] = useState([]);
+  const [vendorPerformance, setVendorPerformance] = useState<VendorPerformance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const handleLogout = () => {
