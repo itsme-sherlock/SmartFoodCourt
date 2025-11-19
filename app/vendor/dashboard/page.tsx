@@ -189,10 +189,21 @@ export default function VendorDashboard() {
   };
 
   const handleQRScan = (decodedText: string) => {
-    // When QR is scanned, directly mark order as ready
-    markOrderAsReady(decodedText);
-    setShowQRModal(false);
-    setSelectedOrderForQR(null);
+    // Validate QR code matches the selected order
+    const cleanScannedCode = decodedText.trim().toUpperCase();
+    const cleanOrderId = selectedOrderForQR?.trim().toUpperCase();
+    
+    if (cleanScannedCode === cleanOrderId) {
+      // QR code matches - change status from ready to completed
+      handleCompleteOrder(cleanOrderId);
+      setShowQRModal(false);
+      setSelectedOrderForQR(null);
+    } else {
+      // QR code doesn't match - show error
+      toast.error('QR code does not match this order!', {
+        description: `Expected: ${cleanOrderId}, Scanned: ${cleanScannedCode}`,
+      });
+    }
   };
 
   const markOrderAsReady = async (orderId: string) => {
@@ -453,16 +464,18 @@ export default function VendorDashboard() {
                             </option>
                           ))}
                         </select>
-                        <button
-                          onClick={() => {
-                            setSelectedOrderForQR(order.orderId);
-                            setShowQRModal(true);
-                          }}
-                          className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition"
-                          title="Scan QR to mark as ready"
-                        >
-                          <Camera size={18} />
-                        </button>
+                        {order.status === 'ready' && (
+                          <button
+                            onClick={() => {
+                              setSelectedOrderForQR(order.orderId);
+                              setShowQRModal(true);
+                            }}
+                            className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition"
+                            title="Scan QR to mark as ready"
+                          >
+                            <Camera size={18} />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -515,16 +528,18 @@ export default function VendorDashboard() {
                               </option>
                             ))}
                           </select>
-                          <button
-                            onClick={() => {
-                              setSelectedOrderForQR(order.orderId);
-                              setShowQRModal(true);
-                            }}
-                            className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition"
-                            title="Scan QR to mark as ready"
-                          >
-                            <Camera size={18} />
-                          </button>
+                          {order.status === 'ready' && (
+                            <button
+                              onClick={() => {
+                                setSelectedOrderForQR(order.orderId);
+                                setShowQRModal(true);
+                              }}
+                              className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition"
+                              title="Scan QR to mark as ready"
+                            >
+                              <Camera size={18} />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -597,16 +612,18 @@ export default function VendorDashboard() {
                               </option>
                             ))}
                           </select>
-                          <button
-                            onClick={() => {
-                              setSelectedOrderForQR(order.orderId);
-                              setShowQRModal(true);
-                            }}
-                            className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition"
-                            title="Scan QR to mark as ready"
-                          >
-                            <Camera size={20} />
-                          </button>
+                          {order.status === 'ready' && (
+                            <button
+                              onClick={() => {
+                                setSelectedOrderForQR(order.orderId);
+                                setShowQRModal(true);
+                              }}
+                              className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg transition"
+                              title="Scan QR to mark as ready"
+                            >
+                              <Camera size={20} />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -672,13 +689,14 @@ export default function VendorDashboard() {
                   ✕
                 </button>
               </div>
-              <p className="text-gray-600 mb-4">Scanning: <strong>{selectedOrderForQR}</strong></p>
+              <p className="text-gray-600 mb-2 font-semibold">Order ID: <strong className="text-lg text-blue-600">{selectedOrderForQR}</strong></p>
+              <p className="text-sm text-gray-500 mb-4">When you scan the employee's QR code, it will verify the order and mark it as completed.</p>
               <QRScanner
                 onScan={handleQRScan}
                 onError={(error) => toast.error(error)}
               />
-              <p className="text-sm text-gray-500 mt-4 text-center">
-                Point camera at the QR code to mark this order as ready
+              <p className="text-xs text-gray-500 mt-4 text-center">
+                Point camera at the QR code from the employee app
               </p>
             </div>
           </div>

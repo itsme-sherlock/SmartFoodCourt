@@ -1,0 +1,14 @@
+{
+  // Make VS Code treat launch.json as JSONC (allows comments)
+  "files.associations": {
+    "launch.json": "jsonc"
+  },
+
+  // Optional but nice: format JSON/JSONC automatically
+  "editor.formatOnSave": true,
+
+  // Optional: make comments prettier in JSONC files
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}
