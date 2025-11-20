@@ -166,9 +166,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 				if (storedOrders) {
 					const parsedOrders = JSON.parse(storedOrders);
 					// Filter to only show orders for this vendor
-					const vendorOrders = parsedOrders.filter((order: Order) =>
-						order.items && order.items.some((item: any) => item.vendorId === user.stall)
-					);
+					const vendorOrders = parsedOrders
+						.filter((order: Order) =>
+							order.items && order.items.some((item: any) => item.vendorId === user.stall)
+						)
+						.map((order: Order) => ({
+							...order,
+							// Ensure timestamp and dateISO are set for proper filtering in dashboard
+							timestamp: order.timestamp || (order.date ? new Date(order.date).getTime() : Date.now()),
+							dateISO: order.dateISO || (order.timestamp ? new Date(order.timestamp).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
+						}));
 					setOrders(vendorOrders);
 				}
 			}

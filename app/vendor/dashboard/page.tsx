@@ -223,18 +223,44 @@ export default function VendorDashboard() {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowISO = tomorrow.toISOString().split('T')[0];
+  
+  // Also include yesterday for "active orders" to show recent orders
+  const yesterdayISO = new Date();
+  yesterdayISO.setDate(yesterdayISO.getDate() - 1);
+  const yesterdayISOStr = yesterdayISO.toISOString().split('T')[0];
 
   const toISO = (order: Order) => order.dateISO || (order.timestamp ? new Date(order.timestamp).toISOString().split('T')[0] : '');
 
-  // Today's orders (compare ISO YYYY-MM-DD using toISO())
+  // Debug: log all vendor orders and their dates
+  console.log('=== VENDOR DASHBOARD DEBUG ===');
+  console.log('Today ISO:', todayISO);
+  console.log('Yesterday ISO:', yesterdayISOStr);
+  console.log('Total vendorOrders loaded:', vendorOrders.length);
+  vendorOrders.forEach((order, idx) => {
+    console.log(`Order ${idx}:`, {
+      orderId: order.orderId,
+      reservationType: order.reservationType,
+      status: order.status,
+      timestamp: order.timestamp,
+      dateISO: order.dateISO,
+      orderISO: toISO(order),
+    });
+  });
+
+  // Today's and yesterday's orders (show recent orders from last 24 hours)
   const todayOrders = vendorOrders.filter(order => {
     const orderISO = toISO(order);
-    return orderISO === todayISO;
+    return orderISO === todayISO || orderISO === yesterdayISOStr;
   });
+
+  console.log('Today + yesterday orders count:', todayOrders.length);
 
   // Separate orders into categories
   const lateMealOrders = todayOrders.filter(o => o.reservationType === 'late-meal' && o.status !== 'completed');
   const regularOrders = todayOrders.filter(o => !o.reservationType);
+  
+  console.log('Late meal orders:', lateMealOrders.length, lateMealOrders);
+  console.log('Regular orders:', regularOrders.length, regularOrders);
   
   // Get tomorrow's pre-orders (more flexible date matching) using tomorrowISO
   const preOrders = vendorOrders.filter(order => {
