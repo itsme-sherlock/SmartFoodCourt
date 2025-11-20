@@ -17,14 +17,19 @@ type OrderItem = {
 
 export default function SpendingTracker() {
   const router = useRouter();
-  const { user, logout, getOrderHistory } = useAuth();
+  const { user, logout, getOrderHistory, orders: contextOrders } = useAuth();
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('daily');
   const [viewType, setViewType] = useState<ViewType>('time');
   const [orders, setOrders] = useState<Order[]>([]);
 
+  // Load orders whenever context orders change or user changes
   useEffect(() => {
-    setOrders(getOrderHistory());
-  }, [getOrderHistory]);
+    if (user?.id) {
+      const userOrders = getOrderHistory();
+      setOrders(userOrders);
+      console.log('Spending tracker loaded orders:', userOrders.length, 'for user:', user.id);
+    }
+  }, [user?.id, contextOrders]);
 
   const handleLogout = () => {
     logout();
@@ -34,7 +39,8 @@ export default function SpendingTracker() {
   const getFilteredData = () => {
     const now = new Date();
     const filtered = orders.filter(order => {
-      const orderDate = new Date(order.date);
+      // Use timestamp if available, fallback to date string
+      const orderDate = order.timestamp ? new Date(order.timestamp) : new Date(order.date);
       switch (timeFilter) {
         case 'daily':
           return orderDate.toDateString() === now.toDateString();
@@ -51,15 +57,17 @@ export default function SpendingTracker() {
 
     if (viewType === 'time') {
       return filtered.reduce((acc, order) => {
-        const date = new Date(order.date).toLocaleDateString();
-        acc[date] = (acc[date] || 0) + order.total;
+        const orderDate = order.timestamp ? new Date(order.timestamp) : new Date(order.date);
+        const date = orderDate.toLocaleDateString();
+        acc[date] = (acc[date] || 0) + (order.total || 0);
         return acc;
       }, {} as Record<string, number>);
     } else {
       return filtered.reduce((acc, order) => {
         order.items.forEach((item: OrderItem) => {
           const vendor = item.vendorName || 'Unknown Vendor';
-          acc[vendor] = (acc[vendor] || 0) + (item.selectedPrice * item.quantity);
+          const itemTotal = (item.selectedPrice || 0) * (item.quantity || 1);
+          acc[vendor] = (acc[vendor] || 0) + itemTotal;
         });
         return acc;
       }, {} as Record<string, number>);
