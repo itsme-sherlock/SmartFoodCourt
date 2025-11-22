@@ -9,11 +9,12 @@ import { BillingTransaction } from '@/lib/types';
 
 export default function AdminBilling() {
   const router = useRouter();
-  const { user, logout, getAdminStats, getVendorPerformance } = useAuth();
+  const { user, logout, getAdminStats, getVendorPerformance, getBillingTransactions } = useAuth();
   const [vendorTransactions, setVendorTransactions] = useState<BillingTransaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<BillingTransaction[]>([]);
   const [selectedVendor, setSelectedVendor] = useState('all');
-  const [dateFilter, setDateFilter] = useState('today');
+  // Default to 'all' so totals show all-time by default instead of today's (which can be empty)
+  const [dateFilter, setDateFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -96,22 +97,35 @@ export default function AdminBilling() {
     },
   ];
 
+  
+
   useEffect(() => {
-    // Simulate loading transactions
     const loadTransactions = async () => {
+      setIsLoading(true);
       try {
-        // In real app, this would fetch from database
-        setVendorTransactions(mockTransactions);
-        setFilteredTransactions(mockTransactions);
+        let txns: BillingTransaction[] = [];
+        if (getBillingTransactions) {
+          txns = await getBillingTransactions();
+        }
+
+        // If the backend returned nothing, fall back to demo data
+        if (!txns || txns.length === 0) {
+          txns = mockTransactions;
+        }
+
+        setVendorTransactions(txns);
+        setFilteredTransactions(txns);
       } catch (error) {
         console.error('Error loading transactions:', error);
+        setVendorTransactions(mockTransactions);
+        setFilteredTransactions(mockTransactions);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadTransactions();
-  }, []);
+  }, [getBillingTransactions]);
 
   // Filter transactions based on selected filters
   useEffect(() => {

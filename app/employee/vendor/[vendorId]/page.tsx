@@ -1,8 +1,9 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { mockVendors, mockMenuItems } from '@/lib/mockData';
+import { useMenu, MenuItem } from '@/context/MenuContext';
+import { mockVendors } from '@/lib/mockData';
 import { ShoppingCart, ChevronLeft, AlertCircle, Clock, Flame, CheckCircle, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -11,8 +12,28 @@ export default function VendorMenu() {
   const params = useParams();
   const vendorId = params?.vendorId as string | undefined;
   const { addToCart, cart } = useAuth();
+  const { getMenuItems } = useMenu();
   const vendor = vendorId ? mockVendors.find(v => v.id === vendorId) : undefined;
-  const items = vendorId ? mockMenuItems[vendorId as keyof typeof mockMenuItems] || [] : [];
+  
+  // Client-side items state to avoid SSR/client hydration mismatch
+  const [items, setItems] = useState<MenuItem[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    if (!vendorId) return;
+
+    // Initial load
+    setItems(getMenuItems(vendorId));
+
+    // Update on storage events so other tabs and local updates reflect here
+    const handleStorage = () => {
+      setItems(getMenuItems(vendorId));
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [vendorId, getMenuItems]);
+  
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
   const [statusFilter, setStatusFilter] = useState<'all' | 'ready' | 'preparing' | 'scheduled' | 'finished'>('all');
@@ -148,7 +169,11 @@ export default function VendorMenu() {
 
         {/* Item Count Info */}
         <div className="mb-6 text-gray-600 font-semibold">
-          Showing {filteredItems.length} of {items.length} items
+          {mounted ? (
+            <>Showing {filteredItems.length} of {items.length} items</>
+          ) : (
+            <>Loading items...</>
+          )}
         </div>
         {/* Explore Unexplored */}
         {unexploredItems.length > 0 && (
@@ -174,7 +199,12 @@ export default function VendorMenu() {
 
         {/* Menu Items */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredItems.length > 0 ? (
+          {!mounted ? (
+            <div className="col-span-1 md:col-span-2 text-center py-12">
+              <div className="text-4xl mb-3">⏳</div>
+              <p className="text-gray-600 font-semibold text-lg">Loading menu...</p>
+            </div>
+          ) : filteredItems.length > 0 ? (
             filteredItems.map(item => (
             <div key={item.id} className="bg-white rounded-lg shadow-md p-6">
               <div className="flex justify-between items-start mb-3">
