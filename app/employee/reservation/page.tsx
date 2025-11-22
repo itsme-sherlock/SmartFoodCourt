@@ -2,7 +2,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, Calendar as CalendarIcon, Clock, Repeat } from 'lucide-react';
-import { mockTimeSlots, mockMenuItems, mockVendors } from '@/lib/mockData';
+import { mockTimeSlots, lateMealTimeSlots, mockMenuItems, mockVendors } from '@/lib/mockData';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
@@ -86,7 +86,7 @@ export default function ReservationPage() {
     setLateMealDate(today);
     setLateMealVendorId(order.vendorId);
     setLateMealSelectedMeal(order.items[0].id);
-    setLateMealTime(mockTimeSlots[0].time);
+    setLateMealTime(lateMealTimeSlots[0].time);
     setActiveTab('late-meal');
     
     setTimeout(() => {
@@ -242,7 +242,7 @@ export default function ReservationPage() {
                       required
                     >
                       <option value="" disabled>Select a time</option>
-                      {mockTimeSlots.map(slot => (
+                      {lateMealTimeSlots.map(slot => (
                         <option key={slot.slotId} value={slot.time}>
                           {slot.time} ({slot.capacity - slot.currentOrders} left)
                         </option>

@@ -195,6 +195,15 @@ export const mockTimeSlots = [
 	{ slotId: 'slot_4', time: '1:30 PM', capacity: 50, currentOrders: 8 },
 ];
 
+// Late-meal specific time slots: every 30 minutes from 1:00 PM to 3:00 PM (inclusive)
+export const lateMealTimeSlots = [
+	{ slotId: 'late_1', time: '1:00 PM', capacity: 20, currentOrders: 10 },
+	{ slotId: 'late_2', time: '1:30 PM', capacity: 10, currentOrders: 5 },
+	{ slotId: 'late_3', time: '2:00 PM', capacity: 10, currentOrders: 2 },
+	{ slotId: 'late_4', time: '2:30 PM', capacity: 10, currentOrders: 0 },
+	{ slotId: 'late_5', time: '3:00 PM', capacity: 10, currentOrders: 0 },
+];
+
 export const mockVendorUsers = [
 	{
 		id: 'vendor_user_1',
