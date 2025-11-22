@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { LogOut, TrendingUp, Cloud, Calendar, BarChart3, LineChart } from 'lucide-react';
 import MobileMenu from '@/components/MobileMenu';
+import AIBadge from '@/components/ui/AIBadge';
 import { VendorAnalytics, DayPatternData, WeatherData, CampusEvent, AIPrediction } from '@/lib/types';
 
 export default function VendorForecasting() {
@@ -125,10 +126,13 @@ export default function VendorForecasting() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center flex-wrap">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Forecasting & Analytics</h1>
-            <p className="text-gray-600 mt-1">AI-powered insights for {user.stall}</p>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-gray-900">Forecasting & Analytics</h1>
+              <AIBadge text="AI Powered" />
+            </div>
+            <p className="text-gray-600 mt-1">Machine learning insights for {user.stall}</p>
           </div>
           <button
             onClick={handleLogout}
@@ -226,9 +230,12 @@ export default function VendorForecasting() {
 
             {/* Weather Impact Analysis */}
             <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center gap-2 mb-6">
-                <Cloud className="text-cyan-600" size={24} />
-                <h2 className="text-xl font-bold text-gray-900">Weather Impact on Orders</h2>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <Cloud className="text-cyan-600" size={24} />
+                  <h2 className="text-xl font-bold text-gray-900">Weather Impact on Orders</h2>
+                </div>
+                <AIBadge text="ML Analysis" size="sm" />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
@@ -288,9 +295,12 @@ export default function VendorForecasting() {
 
             {/* Upcoming Campus Events */}
             <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center gap-2 mb-6">
-                <Calendar className="text-purple-600" size={24} />
-                <h2 className="text-xl font-bold text-gray-900">Upcoming Campus Events</h2>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <Calendar className="text-purple-600" size={24} />
+                  <h2 className="text-xl font-bold text-gray-900">Upcoming Campus Events</h2>
+                </div>
+                <AIBadge text="Smart Predict" size="sm" />
               </div>
               <div className="space-y-4">
                 {analytics.upcomingEvents.map((event) => (
@@ -333,9 +343,12 @@ export default function VendorForecasting() {
 
             {/* AI Predictions */}
             <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center gap-2 mb-6">
-                <LineChart className="text-green-600" size={24} />
-                <h2 className="text-xl font-bold text-gray-900">AI-Powered Predictions</h2>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <LineChart className="text-green-600" size={24} />
+                  <h2 className="text-xl font-bold text-gray-900">AI-Powered Predictions</h2>
+                </div>
+                <AIBadge text="Neural Network" size="sm" />
               </div>
               <div className="space-y-4">
                 {analytics.predictions.map((pred) => (

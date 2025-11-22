@@ -7,6 +7,7 @@ import { LogOut, Clock, Package, TrendingUp, RefreshCw, AlertCircle, Calendar, C
 import { toast } from 'sonner';
 import MobileMenu from '@/components/MobileMenu';
 import QRScanner from '@/components/QRScanner';
+import AIBadge from '@/components/ui/AIBadge';
 import type { Order } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 
@@ -367,7 +368,7 @@ export default function VendorDashboard() {
                 <span className="font-semibold text-green-600">Save ₹3,200</span>
               </p>
             </div>
-            <span className="bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-semibold ml-auto">AI POWERED</span>
+            <AIBadge text="AI Powered" size="sm" className="ml-auto" />
           </div>
         </div>
 
@@ -513,7 +514,10 @@ export default function VendorDashboard() {
 
         {/* Tomorrow's Pre-Orders */}
         {preOrders.length > 0 && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6 border-l-4 border-purple-500">
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6 border-l-4 border-purple-500 relative overflow-hidden">
+            <div className="absolute top-0 right-0 bg-purple-200 text-purple-800 text-xs px-3 py-1 rounded-bl-lg font-bold">
+              AI FORECAST
+            </div>
             <div className="flex items-center gap-2 mb-4">
               <Calendar className="text-purple-600" size={24} />
               <h2 className="text-2xl font-bold text-purple-600">📅 Tomorrow's Pre-Orders (Preparation Plan)</h2>

@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { mockVendors } from '@/lib/mockData';
 import { LogOut, Search, Repeat } from 'lucide-react';
 import MobileMenu from '@/components/MobileMenu';
+import AIBadge from '@/components/ui/AIBadge';
 import type { Order } from '@/context/AuthContext';
 
 export default function EmployeeHome() {
@@ -114,10 +115,16 @@ export default function EmployeeHome() {
 
         {/* Repeat Last Order */}
         {lastOrder && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 bg-blue-200 text-blue-800 text-xs px-3 py-1 rounded-bl-lg font-bold">
+              AI SUGGESTION
+            </div>
             <div className="flex justify-between items-center flex-col sm:flex-row">
               <div>
-                <h2 className="text-xl font-bold text-blue-800">Quick Reorder</h2>
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="text-xl font-bold text-blue-800">Quick Reorder</h2>
+                  <AIBadge text="Smart" size="sm" />
+                </div>
                 <p className="text-blue-700">Your last order from {lastOrder.items[0]?.vendorName}</p>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {lastOrder.items.map((item, index) => (

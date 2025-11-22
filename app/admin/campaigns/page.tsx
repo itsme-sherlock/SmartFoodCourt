@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { LogOut, Megaphone, Gift, Target, Calendar, Users, TrendingUp } from 'lucide-react';
 import MobileMenu from '@/components/MobileMenu';
 import { useEffect, useState } from 'react';
+import AIBadge from '@/components/ui/AIBadge';
 
 export default function AdminCampaigns() {
   const router = useRouter();
@@ -84,31 +85,34 @@ export default function AdminCampaigns() {
       />
 
       {/* Header */}
-      <header className="bg-white shadow-sm hidden md:block">
+      <header className="bg-white shadow-sm hidden md:block border-b-4 border-blue-600">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-red-600">🎉 Campaign Management</h1>
-            <p className="text-gray-600 text-sm">Create and manage marketing campaigns</p>
+            <h1 className="text-2xl font-bold text-blue-800">🎉 Campaign Management</h1>
+            <p className="text-gray-600 text-sm">Create and manage marketing campaigns for Campus Events</p>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/admin/dashboard" className="text-gray-600 hover:underline">
+            <Link href="/admin/dashboard" className="text-gray-600 hover:text-blue-700 hover:underline">
               📊 Dashboard
             </Link>
-            <Link href="/admin/vendors" className="text-gray-600 hover:underline">
+            <Link href="/admin/vendors" className="text-gray-600 hover:text-blue-700 hover:underline">
               🏪 Vendors
             </Link>
-            <Link href="/admin/analytics" className="text-gray-600 hover:underline">
+            <Link href="/admin/analytics" className="text-gray-600 hover:text-blue-700 hover:underline">
               📈 Analytics
             </Link>
-            <Link href="/admin/billing" className="text-gray-600 hover:underline">
+            <Link href="/admin/billing" className="text-gray-600 hover:text-blue-700 hover:underline">
               💰 Billing
             </Link>
-            <Link href="/admin/campaigns" className="text-red-600 hover:underline font-semibold">
+            <Link href="/admin/hybrid-policies" className="text-gray-600 hover:text-blue-700 hover:underline">
+              🔄 Hybrid
+            </Link>
+            <Link href="/admin/campaigns" className="text-blue-800 hover:underline font-bold">
               🎉 Campaigns
             </Link>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
+              className="flex items-center gap-2 bg-blue-800 hover:bg-blue-900 text-white px-4 py-2 rounded-lg transition"
             >
               <LogOut size={18} /> Logout
             </button>
@@ -234,8 +238,11 @@ export default function AdminCampaigns() {
         </div>
 
         {/* Campaign Templates */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Campaign Templates</h2>
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-800">Quick Templates</h2>
+            <AIBadge text="Smart Suggestions" size="sm" />
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {campaignTemplates.map((template, idx) => (
               <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer">

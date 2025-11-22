@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import { LogOut, TrendingDown, Users, DollarSign, Calendar, CheckCircle, AlertTriangle } from 'lucide-react';
 import MobileMenu from '@/components/MobileMenu';
+import AIBadge from '@/components/ui/AIBadge';
 
 export default function AdminHybridPolicies() {
   const router = useRouter();
@@ -14,35 +15,36 @@ export default function AdminHybridPolicies() {
     router.push('/');
   };
 
-  // Simple mock data for demo
+  // Simple mock data for demo (scaled for larger enterprise like Infosys)
   const hybridStats = [
     { 
       label: "Today's Attendance", 
-      value: '60 employees', 
+      value: '3,200 employees', 
       icon: '👥',
-      change: '↓40% from normal',
+      change: '↑6% vs last Friday',
       color: 'text-blue-600'
     },
     { 
-      label: 'Expected Waste Reduction', 
-      value: '85%', 
+      label: 'Waste Reduction', 
+      value: '32%', 
       icon: '♻️',
       change: 'vs traditional model',
       color: 'text-green-600'
     },
     { 
-      label: 'Expected Daily Savings', 
-      value: '₹12,000', 
+      label: 'Projected Daily Savings', 
+      value: '₹84,500', 
       icon: '💰',
-      change: '₹4.32L saved/month',
+      change: '₹18.6L saved this month',
       color: 'text-purple-600'
     },
     { 
-      label: 'Prediction Accuracy', 
-      value: '94%', 
+      label: 'AI Forecast Accuracy', 
+      value: '92%', 
       icon: '🎯',
-      change: 'ML-powered forecasting',
-      color: 'text-orange-600'
+      change: 'Based on last 30 days',
+      color: 'text-orange-600',
+      badge: true
     },
   ];
 
@@ -56,30 +58,30 @@ export default function AdminHybridPolicies() {
   const vendorOptimization = [
     { 
       vendor: 'North Indian Delights', 
-      tomorrow: '25 employees expected', 
-      recommendation: 'Prepare 40% less',
-      savings: '₹3,200',
+      tomorrow: '1,100 employees expected', 
+      recommendation: 'Reduce Rice Prep by 250kg',
+      savings: '₹32,000',
       status: 'optimized'
     },
     { 
       vendor: 'South Indian Express', 
-      tomorrow: '18 employees expected', 
-      recommendation: 'Prepare 50% less',
-      savings: '₹2,800',
+      tomorrow: '850 employees expected', 
+      recommendation: 'Increase Idli Batter by 50L',
+      savings: '₹28,000',
       status: 'optimized'
     },
     { 
       vendor: 'Grill Master', 
-      tomorrow: '12 employees expected', 
-      recommendation: 'Prepare 35% less',
-      savings: '₹1,900',
+      tomorrow: '450 employees expected', 
+      recommendation: 'Limit Chicken Stock to 200kg',
+      savings: '₹19,000',
       status: 'optimized'
     },
     { 
       vendor: 'Happy Bites', 
-      tomorrow: '8 employees expected', 
-      recommendation: 'Prepare 45% less',
-      savings: '₹1,500',
+      tomorrow: '300 employees expected', 
+      recommendation: 'Close Counter Early (3 PM)',
+      savings: '₹15,000',
       status: 'pending'
     },
   ];
@@ -104,31 +106,31 @@ export default function AdminHybridPolicies() {
       />
 
       {/* Desktop Header */}
-      <header className="bg-white shadow-sm hidden md:block">
+      <header className="bg-white shadow-sm hidden md:block border-b-4 border-blue-600">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-blue-600">🔄 Hybrid Work Optimization</h1>
+            <h1 className="text-2xl font-bold text-blue-800">🔄 Hybrid Work Optimization</h1>
             <p className="text-gray-600 text-sm">AI-Powered Food Court Management</p>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/admin/dashboard" className="text-blue-600 hover:underline">
+            <Link href="/admin/dashboard" className="text-gray-600 hover:text-blue-700 hover:underline">
               📊 Dashboard
             </Link>
-            <Link href="/admin/vendors" className="text-blue-600 hover:underline">
+            <Link href="/admin/vendors" className="text-gray-600 hover:text-blue-700 hover:underline">
               🏪 Vendors
             </Link>
-            <Link href="/admin/analytics" className="text-blue-600 hover:underline">
+            <Link href="/admin/analytics" className="text-gray-600 hover:text-blue-700 hover:underline">
               📈 Analytics
             </Link>
-            <Link href="/admin/billing" className="text-blue-600 hover:underline">
+            <Link href="/admin/billing" className="text-gray-600 hover:text-blue-700 hover:underline">
               💳 Billing
             </Link>
-            <Link href="/admin/campaigns" className="text-blue-600 hover:underline">
+            <Link href="/admin/campaigns" className="text-gray-600 hover:text-blue-700 hover:underline">
               🎉 Campaigns
             </Link>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
+              className="flex items-center gap-2 bg-blue-800 hover:bg-blue-900 text-white px-4 py-2 rounded-lg transition"
             >
               <LogOut size={18} /> Logout
             </button>
@@ -141,9 +143,12 @@ export default function AdminHybridPolicies() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           {hybridStats.map((stat, idx) => (
             <div key={idx} className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex justify-between items-start mb-2">
                 <p className="text-2xl">{stat.icon}</p>
-                <span className={`text-xs font-semibold ${stat.color}`}>LIVE</span>
+                <div className="flex flex-col items-end gap-1">
+                  {stat.badge && <AIBadge text="AI Model" size="sm" />}
+                  <span className={`text-xs font-semibold ${stat.color}`}>LIVE</span>
+                </div>
               </div>
               <p className="text-gray-600 text-sm">{stat.label}</p>
               <p className={`text-3xl font-bold mt-1 ${stat.color}`}>{stat.value}</p>
@@ -173,7 +178,10 @@ export default function AdminHybridPolicies() {
 
           {/* Vendor Optimization */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">🍽️ Tomorrow's Vendor Optimization</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-gray-800">🍽️ Tomorrow's Vendor Optimization</h2>
+              <AIBadge text="Smart Predict" size="sm" />
+            </div>
             <div className="space-y-4">
               {vendorOptimization.map((vendor, idx) => (
                 <div key={idx} className="p-4 border rounded-lg">
@@ -200,15 +208,15 @@ export default function AdminHybridPolicies() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-white/20 rounded-lg p-4">
               <h3 className="font-semibold mb-2">📊 Prediction Engine</h3>
-              <p className="text-sm">ML algorithms analyze employee patterns to predict daily attendance with 94% accuracy</p>
+              <p className="text-sm">ML algorithms analyze employee patterns to predict daily attendance with 92% accuracy</p>
             </div>
             <div className="bg-white/20 rounded-lg p-4">
               <h3 className="font-semibold mb-2">♻️ Waste Reduction</h3>
-              <p className="text-sm">Smart preparation recommendations have reduced food waste by 85% compared to traditional models</p>
+              <p className="text-sm">Smart preparation recommendations have reduced food waste by 32% compared to traditional models</p>
             </div>
             <div className="bg-white/20 rounded-lg p-4">
               <h3 className="font-semibold mb-2">💰 Cost Optimization</h3>
-              <p className="text-sm">Hybrid-aware food prep saves ₹12,000 daily, totaling ₹4.32L in monthly operational savings</p>
+              <p className="text-sm">Hybrid-aware food prep saves ₹84,500 daily, totaling ₹18.6L in monthly operational savings</p>
             </div>
           </div>
         </div> */}

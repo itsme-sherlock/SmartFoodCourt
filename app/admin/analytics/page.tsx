@@ -6,6 +6,7 @@ import { LogOut, BarChart3, TrendingUp, Users, Clock, DollarSign } from 'lucide-
 import MobileMenu from '@/components/MobileMenu';
 import { useEffect, useState } from 'react';
 import { VendorPerformance } from '@/lib/types';
+import AIBadge from '@/components/ui/AIBadge';
 
 export default function AdminAnalytics() {
   const router = useRouter();
@@ -38,10 +39,10 @@ export default function AdminAnalytics() {
         } else {
           // Mock data for demo
           setVendorPerformance([
-            { name: 'North Indian Delights', orders: 45, rating: 4.5, waste: '8%', revenue: 11250 },
-            { name: 'South Indian Express', orders: 38, rating: 4.2, waste: '6%', revenue: 9500 },
-            { name: 'Grill Master', orders: 22, rating: 4.7, waste: '5%', revenue: 8750 },
-            { name: 'Happy Bites', orders: 15, rating: 4.0, waste: '10%', revenue: 3750 },
+            { name: 'North Indian Delights', orders: 1_120, rating: 4.5, waste: '8%', revenue: 1_125_000 },
+            { name: 'South Indian Express', orders: 980, rating: 4.2, waste: '6%', revenue: 950_000 },
+            { name: 'Grill Master', orders: 740, rating: 4.7, waste: '5%', revenue: 875_000 },
+            { name: 'Happy Bites', orders: 540, rating: 4.0, waste: '10%', revenue: 375_000 },
           ]);
         }
       } catch (error) {
@@ -71,34 +72,34 @@ export default function AdminAnalytics() {
       />
 
       {/* Header */}
-      <header className="bg-white shadow-sm hidden md:block">
+      <header className="bg-white shadow-sm hidden md:block border-b-4 border-blue-600">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-red-600">📊 Analytics Dashboard</h1>
             <p className="text-gray-600 text-sm">Detailed insights and performance metrics</p>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/admin/dashboard" className="text-gray-600 hover:underline">
+            <Link href="/admin/dashboard" className="text-gray-600 hover:text-blue-700 hover:underline">
               📊 Dashboard
             </Link>
-            <Link href="/admin/vendors" className="text-gray-600 hover:underline">
+            <Link href="/admin/vendors" className="text-gray-600 hover:text-blue-700 hover:underline">
               🏪 Vendors
             </Link>
-            <Link href="/admin/analytics" className="text-red-600 hover:underline font-semibold">
+            <Link href="/admin/analytics" className="text-blue-800 hover:underline font-bold">
               📈 Analytics
             </Link>
-            <Link href="/admin/billing" className="text-blue-600 hover:underline">
+            <Link href="/admin/billing" className="text-blue-600 hover:text-blue-800 hover:underline">
               💳 Billing
             </Link>
-            <Link href="/admin/hybrid-policies" className="text-blue-600 hover:underline">
+            <Link href="/admin/hybrid-policies" className="text-blue-600 hover:text-blue-800 hover:underline">
               🔄 Hybrid
             </Link>
-            <Link href="/admin/campaigns" className="text-blue-600 hover:underline">
+            <Link href="/admin/campaigns" className="text-blue-600 hover:text-blue-800 hover:underline">
               🎉 Campaigns
             </Link>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
+              className="flex items-center gap-2 bg-blue-800 hover:bg-blue-900 text-white px-4 py-2 rounded-lg transition"
             >
               <LogOut size={18} /> Logout
             </button>
@@ -165,32 +166,39 @@ export default function AdminAnalytics() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <h3 className="text-lg font-bold text-gray-800 mb-4">Revenue Trend (Last 7 Days)</h3>
             <div className="h-64 flex items-end justify-between space-x-2">
-              {[6, 78, 82, 75, 88, 9, 12].map((value, idx) => (
-                <div key={idx} className="flex-1 flex flex-col items-center">
-                  <div
-                    className="bg-blue-500 rounded-t w-full mb-2"
-                    style={{ height: `${(value / 100) * 200}px` }}
-                  ></div>
-                  <span className="text-xs text-gray-500">Day {idx + 1}</span>
-                </div>
-              ))}
+              {[6, 78, 82, 75, 88, 9, 12].map((value, idx) => {
+                const date = new Date();
+                date.setDate(date.getDate() - (6 - idx));
+                return (
+                  <div key={idx} className="flex-1 flex flex-col items-center">
+                    <div
+                      className="bg-blue-500 rounded-t w-full mb-2"
+                      style={{ height: `${(value / 100) * 200}px` }}
+                    ></div>
+                    <span className="text-xs text-gray-500">{date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
           {/* Order Volume Chart */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h3 className="text-lg font-bold text-gray-800 mb-4">Order Volume by Hour</h3>
-            <div className="h-64 flex items-end justify-between space-x-1">
-              {[2, 5, 8, 15, 25, 35, 42, 38, 28, 18, 12, 6].map((orders, idx) => (
-                <div key={idx} className="flex-1 flex flex-col items-center">
-                  <div
-                    className="bg-green-500 rounded-t w-full mb-2"
-                    style={{ height: `${(orders / 50) * 200}px` }}
-                  ></div>
-                  <span className="text-xs text-gray-500">{idx + 8}:00</span>
-                </div>
-              ))}
+            <div className="h-64 overflow-x-auto">
+              <div className="flex items-end justify-between space-x-2 min-w-[600px] md:min-w-0">
+                {[2, 5, 8, 15, 25, 35, 42, 38, 28, 18, 12, 6].map((orders, idx) => (
+                  <div key={idx} className="flex-1 flex flex-col items-center min-w-[40px]">
+                    <div
+                      className="bg-green-500 rounded-t w-full mb-2"
+                      style={{ height: `${(orders / 50) * 200}px` }}
+                    ></div>
+                    <span className="text-xs text-gray-500 whitespace-nowrap">{idx + 8}:00</span>
+                  </div>
+                ))}
+              </div>
             </div>
+            <p className="text-xs text-gray-400 mt-2 text-center">← Scroll to see all hours →</p>
           </div>
         </div>
 
@@ -260,21 +268,28 @@ export default function AdminAnalytics() {
 
           {/* Performance Insights */}
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Performance Insights</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-800">Performance Insights</h3>
+              <AIBadge text="AI Predictions" size="sm" />
+            </div>
             <div className="space-y-4">
-              <div className="p-3 bg-green-50 rounded-lg">
+              <div className="p-3 bg-green-50 rounded-lg relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-green-200 text-green-800 text-[10px] px-2 py-0.5 rounded-bl-lg font-bold">PREDICTED</div>
                 <p className="text-sm font-medium text-green-800">Peak Hours</p>
                 <p className="text-xs text-green-600">12-2 PM & 7-9 PM</p>
               </div>
-              <div className="p-3 bg-blue-50 rounded-lg">
+              <div className="p-3 bg-blue-50 rounded-lg relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-blue-200 text-blue-800 text-[10px] px-2 py-0.5 rounded-bl-lg font-bold">ANALYSIS</div>
                 <p className="text-sm font-medium text-blue-800">Top Cuisine</p>
                 <p className="text-xs text-blue-600">North Indian (45%)</p>
               </div>
-              <div className="p-3 bg-yellow-50 rounded-lg">
+              <div className="p-3 bg-yellow-50 rounded-lg relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-yellow-200 text-yellow-800 text-[10px] px-2 py-0.5 rounded-bl-lg font-bold">ESTIMATE</div>
                 <p className="text-sm font-medium text-yellow-800">Avg Wait Time</p>
                 <p className="text-xs text-yellow-600">{adminStats.avgWaitTime}</p>
               </div>
-              <div className="p-3 bg-red-50 rounded-lg">
+              <div className="p-3 bg-red-50 rounded-lg relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-red-200 text-red-800 text-[10px] px-2 py-0.5 rounded-bl-lg font-bold">ALERT</div>
                 <p className="text-sm font-medium text-red-800">High Waste Alert</p>
                 <p className="text-xs text-red-600">
                   {vendorPerformance.filter(v => parseInt(v.waste) > 8).length} vendors

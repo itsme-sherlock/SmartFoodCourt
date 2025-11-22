@@ -76,7 +76,7 @@ export const mockMenuItems = {
 			basePrice: 250,
 			sizes: { small: 200, medium: 250, large: 300 },
 			status: 'Ready',
-			orderCount: 45,
+			orderCount: 1020,
 			allergens: ['dairy'],
 		},
 		{
@@ -86,7 +86,7 @@ export const mockMenuItems = {
 			basePrice: 180,
 			sizes: { small: 150, medium: 180, large: 220 },
 			status: 'Ready',
-			orderCount: 38,
+			orderCount: 980,
 			allergens: ['dairy'],
 		},
 		{
@@ -96,7 +96,7 @@ export const mockMenuItems = {
 			basePrice: 220,
 			sizes: { small: 180, medium: 220, large: 280 },
 			status: 'Preparing',
-			orderCount: 3,
+			orderCount: 740,
 			allergens: ['dairy'],
 		},
 		{
@@ -106,7 +106,7 @@ export const mockMenuItems = {
 			basePrice: 170,
 			sizes: { small: 140, medium: 170, large: 210 },
 			status: 'Scheduled',
-			orderCount: 0,
+			orderCount: 120,
 			allergens: [],
 		},
 		{
@@ -116,7 +116,7 @@ export const mockMenuItems = {
 			basePrice: 90,
 			sizes: { small: 90, medium: 120, large: 150 },
 			status: 'Sold Out',
-			orderCount: 120,
+			orderCount: 600,
 			allergens: ['dairy'],
 		},
 	],
@@ -128,7 +128,7 @@ export const mockMenuItems = {
 			basePrice: 120,
 			sizes: { small: 100, medium: 120, large: 150 },
 			status: 'Ready',
-			orderCount: 52,
+			orderCount: 980,
 			allergens: [],
 		},
 		{
@@ -138,7 +138,7 @@ export const mockMenuItems = {
 			basePrice: 80,
 			sizes: { small: 60, medium: 80, large: 100 },
 			status: 'Ready',
-			orderCount: 2,
+			orderCount: 360,
 			allergens: [],
 		},
 		{
@@ -148,7 +148,7 @@ export const mockMenuItems = {
 			basePrice: 40,
 			sizes: { small: 30, medium: 40, large: 60 },
 			status: 'Scheduled',
-			orderCount: 0,
+			orderCount: 180,
 			allergens: [],
 		},
 	],
@@ -160,7 +160,7 @@ export const mockMenuItems = {
 			basePrice: 280,
 			sizes: { small: 200, medium: 280, large: 350 },
 			status: 'Ready',
-			orderCount: 40,
+			orderCount: 450,
 			allergens: [],
 		},
 		{
@@ -170,7 +170,7 @@ export const mockMenuItems = {
 			basePrice: 520,
 			sizes: { small: 360, medium: 520, large: 700 },
 			status: 'Sold Out',
-			orderCount: 80,
+			orderCount: 800,
 			allergens: [],
 		},
 	],
@@ -182,26 +182,26 @@ export const mockMenuItems = {
 			basePrice: 150,
 			sizes: { small: 120, medium: 150, large: 200 },
 			status: 'Ready',
-			orderCount: 25,
+			orderCount: 540,
 			allergens: ['dairy'],
 		},
 	],
 };
 
 export const mockTimeSlots = [
-	{ slotId: 'slot_1', time: '12:00 PM', capacity: 50, currentOrders: 48 },
-	{ slotId: 'slot_2', time: '12:30 PM', capacity: 50, currentOrders: 32 },
-	{ slotId: 'slot_3', time: '1:00 PM', capacity: 50, currentOrders: 15 },
-	{ slotId: 'slot_4', time: '1:30 PM', capacity: 50, currentOrders: 8 },
+	{ slotId: 'slot_1', time: '12:00 PM', capacity: 500, currentOrders: 480 },
+	{ slotId: 'slot_2', time: '12:30 PM', capacity: 500, currentOrders: 320 },
+	{ slotId: 'slot_3', time: '1:00 PM', capacity: 500, currentOrders: 150 },
+	{ slotId: 'slot_4', time: '1:30 PM', capacity: 500, currentOrders: 80 },
 ];
 
 // Late-meal specific time slots: every 30 minutes from 1:00 PM to 3:00 PM (inclusive)
 export const lateMealTimeSlots = [
-	{ slotId: 'late_1', time: '1:00 PM', capacity: 20, currentOrders: 10 },
-	{ slotId: 'late_2', time: '1:30 PM', capacity: 10, currentOrders: 5 },
-	{ slotId: 'late_3', time: '2:00 PM', capacity: 10, currentOrders: 2 },
-	{ slotId: 'late_4', time: '2:30 PM', capacity: 10, currentOrders: 0 },
-	{ slotId: 'late_5', time: '3:00 PM', capacity: 10, currentOrders: 0 },
+	{ slotId: 'late_1', time: '1:00 PM', capacity: 200, currentOrders: 100 },
+	{ slotId: 'late_2', time: '1:30 PM', capacity: 150, currentOrders: 80 },
+	{ slotId: 'late_3', time: '2:00 PM', capacity: 150, currentOrders: 40 },
+	{ slotId: 'late_4', time: '2:30 PM', capacity: 150, currentOrders: 20 },
+	{ slotId: 'late_5', time: '3:00 PM', capacity: 150, currentOrders: 15 },
 ];
 
 export const mockVendorUsers = [

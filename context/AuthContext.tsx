@@ -166,16 +166,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 				if (storedOrders) {
 					const parsedOrders = JSON.parse(storedOrders);
 					// Filter to only show orders for this vendor
-					const vendorOrders = parsedOrders
-						.filter((order: Order) =>
-							order.items && order.items.some((item: any) => item.vendorId === user.stall)
-						)
-						.map((order: Order) => ({
-							...order,
-							// Ensure timestamp and dateISO are set for proper filtering in dashboard
-							timestamp: order.timestamp || (order.date ? new Date(order.date).getTime() : Date.now()),
-							dateISO: order.dateISO || (order.timestamp ? new Date(order.timestamp).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
-						}));
+					const vendorOrders = parsedOrders.filter((order: Order) =>
+						order.items && order.items.some((item: any) => item.vendorId === user.stall)
+					);
 					setOrders(vendorOrders);
 				}
 			}
@@ -554,14 +547,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 	const getVendorPerformance = async (): Promise<VendorPerformance[]> => {
 		if (!hasSupabase) {
-			// Return mock data
-			return [
-				{ name: 'North Indian Delights', orders: 45, rating: 4.5, waste: '8%', revenue: 11250 },
-				{ name: 'South Indian Express', orders: 38, rating: 4.2, waste: '6%', revenue: 9500 },
-				{ name: 'Grill Master', orders: 22, rating: 4.7, waste: '5%', revenue: 8750 },
-				{ name: 'Happy Bites', orders: 15, rating: 4.0, waste: '10%', revenue: 3750 },
-			];
-		}
+				// Return scaled mock data for enterprise campus use
+				return [
+					{ name: 'North Indian Delights', orders: 1_120, rating: 4.5, waste: '8%', revenue: 1_125_000 },
+					{ name: 'South Indian Express', orders: 980, rating: 4.2, waste: '6%', revenue: 950_000 },
+					{ name: 'Grill Master', orders: 740, rating: 4.7, waste: '5%', revenue: 875_000 },
+					{ name: 'Happy Bites', orders: 540, rating: 4.0, waste: '10%', revenue: 375_000 },
+				];
+			}
 
 		try {
 			const supabase = getSupabase();
@@ -625,7 +618,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 					netAmount: 315.00,
 					paymentMethod: 'UPI',
 					status: 'Completed',
-					timestamp: new Date('2025-11-16T12:30:00'),
+					timestamp: new Date(new Date().setHours(12, 30, 0, 0)),
 					items: ['Butter Chicken', 'Naan', 'Rice'],
 				},
 				{
@@ -639,7 +632,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 					netAmount: 162.00,
 					paymentMethod: 'Card',
 					status: 'Completed',
-					timestamp: new Date('2025-11-16T11:45:00'),
+					timestamp: new Date(new Date().setHours(11, 45, 0, 0)),
 					items: ['Masala Dosa', 'Filter Coffee'],
 				},
 			];

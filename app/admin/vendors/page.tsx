@@ -28,10 +28,10 @@ export default function AdminVendors() {
         } else {
           // Use mock data if no real data
           setVendorPerformance([
-            { name: 'North Indian Delights', orders: 45, rating: 4.5, waste: '8%', revenue: 11250 },
-            { name: 'South Indian Express', orders: 38, rating: 4.2, waste: '6%', revenue: 9500 },
-            { name: 'Grill Master', orders: 22, rating: 4.7, waste: '5%', revenue: 8750 },
-            { name: 'Happy Bites', orders: 15, rating: 4.0, waste: '10%', revenue: 3750 },
+            { name: 'North Indian Delights', orders: 1_120, rating: 4.5, waste: '8%', revenue: 1_125_000 },
+            { name: 'South Indian Express', orders: 980, rating: 4.2, waste: '6%', revenue: 950_000 },
+            { name: 'Grill Master', orders: 740, rating: 4.7, waste: '5%', revenue: 875_000 },
+            { name: 'Happy Bites', orders: 540, rating: 4.0, waste: '10%', revenue: 375_000 },
           ]);
         }
       } catch (error) {
@@ -76,34 +76,34 @@ export default function AdminVendors() {
       />
 
       {/* Header */}
-      <header className="bg-white shadow-sm hidden md:block">
+      <header className="bg-white shadow-sm hidden md:block border-b-4 border-blue-600">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-red-600">🏪 Vendor Management</h1>
-            <p className="text-gray-600 text-sm">Manage and monitor all food court vendors</p>
+            <h1 className="text-2xl font-bold text-blue-800">🏪 Vendor Management</h1>
+            <p className="text-gray-600 text-sm">Manage and monitor all food court vendors across DC</p>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/admin/dashboard" className="text-gray-600 hover:underline">
+            <Link href="/admin/dashboard" className="text-gray-600 hover:text-blue-700 hover:underline">
               📊 Dashboard
             </Link>
-            <Link href="/admin/vendors" className="text-red-600 hover:underline font-semibold">
+            <Link href="/admin/vendors" className="text-blue-800 hover:underline font-bold">
               🏪 Vendors
             </Link>
-            <Link href="/admin/analytics" className="text-gray-600 hover:underline">
+            <Link href="/admin/analytics" className="text-gray-600 hover:text-blue-700 hover:underline">
               📈 Analytics
             </Link>
-            <Link href="/admin/billing" className="text-blue-600 hover:underline">
+            <Link href="/admin/billing" className="text-gray-600 hover:text-blue-700 hover:underline">
               💳 Billing
             </Link>
-            <Link href="/admin/hybrid-policies" className="text-blue-600 hover:underline">
+            <Link href="/admin/hybrid-policies" className="text-gray-600 hover:text-blue-700 hover:underline">
               🔄 Hybrid
             </Link>
-            <Link href="/admin/campaigns" className="text-blue-600 hover:underline">
+            <Link href="/admin/campaigns" className="text-gray-600 hover:text-blue-700 hover:underline">
               🎉 Campaigns
             </Link>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
+              className="flex items-center gap-2 bg-blue-800 hover:bg-blue-900 text-white px-4 py-2 rounded-lg transition"
             >
               <LogOut size={18} /> Logout
             </button>

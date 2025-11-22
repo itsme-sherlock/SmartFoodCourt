@@ -6,6 +6,7 @@ import { LogOut, Receipt, DollarSign, TrendingUp, Calendar, Download, Filter, Se
 import MobileMenu from '@/components/MobileMenu';
 import { useEffect, useState } from 'react';
 import { BillingTransaction } from '@/lib/types';
+import { toast } from 'sonner';
 
 export default function AdminBilling() {
   const router = useRouter();
@@ -190,6 +191,41 @@ export default function AdminBilling() {
     }
   };
 
+  const handleExportCSV = () => {
+    const headers = ['Transaction ID', 'Order ID', 'Vendor', 'Customer', 'Amount', 'Commission', 'Net Amount', 'Payment Method', 'Status', 'Time'];
+    const csvContent = [
+      headers.join(','),
+      ...filteredTransactions.map(txn => [
+        txn.id,
+        txn.orderId,
+        `"${txn.vendorName}"`,
+        `"${txn.customerName}"`,
+        txn.amount,
+        txn.commission,
+        txn.netAmount,
+        txn.paymentMethod,
+        txn.status,
+        `"${txn.timestamp.toLocaleString()}"`
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `billing_transactions_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('CSV exported successfully');
+  };
+
+  const handleGenerateReport = () => {
+    window.print();
+    toast.success('Report generated');
+  };
+
   const vendors = [
     { id: 'vendor_1', name: 'North Indian Delights' },
     { id: 'vendor_2', name: 'South Indian Express' },
@@ -214,34 +250,34 @@ export default function AdminBilling() {
       />
 
       {/* Header */}
-      <header className="bg-white shadow-sm hidden md:block">
+      <header className="bg-white shadow-sm hidden md:block border-b-4 border-blue-600">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-red-600">💰 Centralized Billing</h1>
-            <p className="text-gray-600 text-sm">Monitor all vendor transactions and payments</p>
+            <h1 className="text-2xl font-bold text-blue-800">💰 Centralized Billing</h1>
+            <p className="text-gray-600 text-sm">Monitor all vendor transactions and payments across DC</p>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/admin/dashboard" className="text-gray-600 hover:underline">
+            <Link href="/admin/dashboard" className="text-gray-600 hover:text-blue-700 hover:underline">
               📊 Dashboard
             </Link>
-            <Link href="/admin/vendors" className="text-gray-600 hover:underline">
+            <Link href="/admin/vendors" className="text-gray-600 hover:text-blue-700 hover:underline">
               🏪 Vendors
             </Link>
-            <Link href="/admin/analytics" className="text-gray-600 hover:underline">
+            <Link href="/admin/analytics" className="text-gray-600 hover:text-blue-700 hover:underline">
               📈 Analytics
             </Link>
-            <Link href="/admin/billing" className="text-red-600 hover:underline font-semibold">
+            <Link href="/admin/billing" className="text-blue-800 hover:underline font-bold">
               💰 Billing
             </Link>
-            <Link href="/admin/hybrid-policies" className="text-gray-600 hover:underline">
+            <Link href="/admin/hybrid-policies" className="text-gray-600 hover:text-blue-700 hover:underline">
               🔄 Hybrid
             </Link>
-            <Link href="/admin/campaigns" className="text-gray-600 hover:underline">
+            <Link href="/admin/campaigns" className="text-gray-600 hover:text-blue-700 hover:underline">
               🎉 Campaigns
             </Link>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
+              className="flex items-center gap-2 bg-blue-800 hover:bg-blue-900 text-white px-4 py-2 rounded-lg transition"
             >
               <LogOut size={18} /> Logout
             </button>
@@ -303,10 +339,16 @@ export default function AdminBilling() {
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-gray-800">Transaction History</h2>
             <div className="flex gap-2">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+              <button 
+                onClick={handleExportCSV}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+              >
                 <Download size={16} className="inline mr-1" /> Export CSV
               </button>
-              <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+              <button 
+                onClick={handleGenerateReport}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+              >
                 <Receipt size={16} className="inline mr-1" /> Generate Report
               </button>
             </div>

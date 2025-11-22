@@ -33,14 +33,14 @@ export default function MobileMenu({ userName, user, menuLinks, links, onLogout 
   return (
     <>
       {/* Mobile Header - Only shows on mobile */}
-      <div className="md:hidden w-full bg-white shadow-sm px-4 py-4 flex justify-between items-center">
+      <div className="md:hidden w-full bg-white shadow-sm px-4 py-4 flex justify-between items-center border-b-4 border-blue-600">
         <div>
-          <h1 className="text-xl font-bold text-blue-600">🍽️ Food Court</h1>
+          <h1 className="text-xl font-bold text-blue-800">🏢 Infosys Food Court</h1>
           <p className="text-gray-600 text-sm">Welcome, {displayName}</p>
         </div>
         <button 
           onClick={() => setIsOpen(!isOpen)}
-          className="focus:outline-none"
+          className="focus:outline-none text-blue-800"
           aria-label="Toggle menu"
         >
           {isOpen ? <X size={28} /> : <Menu size={28} />}

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ChevronLeft, Heart, Share2, MessageCircle, Copy, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { DiscoveryItem, ShareDiscovery } from '@/lib/types';
+import AIBadge from '@/components/ui/AIBadge';
 
 export default function Discover() {
   const router = useRouter();
@@ -223,7 +224,10 @@ export default function Discover() {
         {/* Discovery Items Grid */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">✨ Unexplored Items</h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-gray-900">✨ Unexplored Items</h2>
+              <AIBadge text="Personalized" size="sm" />
+            </div>
             <span className="bg-linear-to-r from-blue-500 to-purple-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
               {discoveryItems.length} items
             </span>
