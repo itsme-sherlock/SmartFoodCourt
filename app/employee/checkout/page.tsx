@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { mockTimeSlots } from '@/lib/mockData';
@@ -18,6 +18,16 @@ export default function Checkout() {
   const subtotal = cart.reduce((sum, item) => sum + (item.selectedPrice || 0), 0);
   const tax = subtotal * 0.05;
   const total = subtotal + tax;
+
+  // Check if cart has reservation items (pre-order or late-meal)
+  const hasReservationItems = cart.some(item => item.reservationType === 'pre-order' || item.reservationType === 'late-meal');
+  
+  // If reservation items exist, force orderType to 'now' since timing is pre-set
+  useEffect(() => {
+    if (hasReservationItems) {
+      setOrderType('now');
+    }
+  }, [hasReservationItems]);
 
   const handlePlaceOrder = () => {
     if (cart.length === 0) {
@@ -147,8 +157,17 @@ export default function Checkout() {
             </div>
 
             {/* Order Type */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div className={`bg-white rounded-lg shadow-md p-6 mb-6 ${hasReservationItems ? 'opacity-60 pointer-events-none' : ''}`}>
               <h3 className="text-lg font-bold text-gray-800 mb-4">When would you like your order?</h3>
+              
+              {hasReservationItems && (
+                <div className="bg-blue-50 border border-blue-300 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-blue-800 font-semibold">
+                    ℹ️ Reservation items have fixed timing. Order type is set to "Now".
+                  </p>
+                </div>
+              )}
+              
               <div className="space-y-3">
                 <label className="flex items-center">
                   <input
@@ -157,6 +176,7 @@ export default function Checkout() {
                     value="now"
                     checked={orderType === 'now'}
                     onChange={(e) => setOrderType(e.target.value as 'now' | 'slot')}
+                    disabled={hasReservationItems}
                     className="mr-3"
                   />
                   <span className="font-semibold">Order Now (15 mins)</span>
@@ -168,13 +188,14 @@ export default function Checkout() {
                     value="slot"
                     checked={orderType === 'slot'}
                     onChange={(e) => setOrderType(e.target.value as 'now' | 'slot')}
+                    disabled={hasReservationItems}
                     className="mr-3"
                   />
                   <span className="font-semibold">Choose a Time Slot</span>
                 </label>
               </div>
 
-              {orderType === 'slot' && (
+              {orderType === 'slot' && !hasReservationItems && (
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   {mockTimeSlots.map(slot => (
                     <button

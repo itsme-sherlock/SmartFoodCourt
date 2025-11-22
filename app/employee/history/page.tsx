@@ -1,10 +1,11 @@
 "use client";
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, Package, Clock, CheckCircle, XCircle, Repeat, Calendar } from 'lucide-react';
+import { ChevronLeft, Package, Clock, CheckCircle, XCircle, Repeat, Calendar, Download, X, QrCode } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Order } from '@/lib/types';
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function OrderHistory() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function OrderHistory() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [readyNotifications, setReadyNotifications] = useState<Set<string>>(new Set());
   const [dismissedNotifications, setDismissedNotifications] = useState<Set<string>>(new Set());
+  const [selectedQROrder, setSelectedQROrder] = useState<string | null>(null);
 
   useEffect(() => {
     const initialOrders = getOrderHistory();
@@ -73,6 +75,8 @@ export default function OrderHistory() {
     };
   }, [user?.id]);
 
+  // Keep UI responsive with Tailwind classes; avoid JS matchMedia and extra state.
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
@@ -111,8 +115,82 @@ export default function OrderHistory() {
     router.push('/employee/checkout');
   };
 
+  const handleDownloadQR = (orderId: string) => {
+    const svg = document.getElementById(`qr-code-${orderId}`);
+    if (!svg) return;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx?.drawImage(img, 0, 0);
+      const pngFile = canvas.toDataURL('image/png');
+
+      const downloadLink = document.createElement('a');
+      downloadLink.download = `order-${orderId}.png`;
+      downloadLink.href = pngFile;
+      downloadLink.click();
+    };
+
+    img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* QR Code Modal — shown only on large screens (via Tailwind `hidden lg:flex`) */}
+      {selectedQROrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full sm:max-w-md lg:max-w-lg max-h-[90vh] overflow-auto text-center">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-800">Order QR Code</h2>
+              <button
+                onClick={() => setSelectedQROrder(null)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-4">
+              Order ID: <span className="font-bold text-blue-600">{selectedQROrder}</span>
+            </p>
+
+            <div className="bg-white p-4 rounded-lg inline-block shadow-sm border border-gray-200 mb-6">
+              <QRCodeSVG
+                id={`qr-code-${selectedQROrder}`}
+                value={selectedQROrder}
+                size={200}
+                className="w-full h-auto max-w-60 mx-auto"
+                level="H"
+                includeMargin={true}
+              />
+            </div>
+
+            <p className="text-xs text-gray-600 mb-4">
+              📸 Show this QR code to the vendor when picking up your order
+            </p>
+
+            <button
+              onClick={() => handleDownloadQR(selectedQROrder)}
+              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition"
+            >
+              <Download size={18} />
+              Download QR Code
+            </button>
+
+            <button
+              onClick={() => setSelectedQROrder(null)}
+              className="w-full mt-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 rounded-lg transition"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Ready Notifications */}
         {Array.from(readyNotifications).map((orderId) => {
@@ -219,7 +297,7 @@ export default function OrderHistory() {
                     </div>
                   </div>
 
-                  <div className="border-t pt-3 flex justify-between items-center">
+                    <div className="border-t pt-3 flex justify-between items-center">
                     <div className="text-sm text-gray-600 flex flex-col sm:flex-row">
                       <span className="capitalize">{order.paymentMethod}</span>
 
@@ -236,16 +314,25 @@ export default function OrderHistory() {
 
                     <div className="flex items-center gap-4">
                       <button
+                        onClick={() => setSelectedQROrder((prev) => (prev === order.orderId ? null : order.orderId))}
+                        className="flex items-center gap-2 bg-purple-100 hover:bg-purple-200 text-purple-700 px-2 py-1 sm:px-4 sm:py-2 rounded-lg font-semibold text-[10px] sm:text-sm transition"
+                        title="View QR Code"
+                      >
+                        <QrCode size={16} /> <span className="hidden sm:inline">View QR</span>
+                      </button>
+                      <button
                         onClick={() => handleRepeatOrder(order.orderId)}
                         className="flex items-center gap-2 bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 sm:px-4 sm:py-2 rounded-lg font-semibold text-[10px] sm:text-sm transition"
                       >
-                        <Repeat size={16} /> Repeat order
+                        <Repeat size={16} /> <span className="hidden sm:inline">Repeat order</span>
                       </button>
                       <div className="text-right">
                         <p className="text-xs text-gray-500">Total</p>
                         <p className="text-lg font-bold text-blue-600">₹{order.total.toFixed(2)}</p>
                       </div>
                     </div>
+
+                    {/* QR modal will be used for both mobile and desktop. */}
                   </div>
                 </div>
               ))}

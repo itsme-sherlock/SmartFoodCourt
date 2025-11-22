@@ -104,9 +104,12 @@ export default function EmployeeHome() {
               />
             </div>
           </div>
-          <div className="ml-4 bg-blue-100 px-4 py-2 rounded-lg">
-            <p className="text-blue-700 font-semibold">Cart Items: {cart.length}</p>
-          </div>
+          <button
+            onClick={() => router.push('/employee/checkout')}
+            className="ml-4 bg-blue-100 hover:bg-blue-200 px-4 py-2 rounded-lg transition cursor-pointer"
+          >
+            <p className="text-blue-700 font-semibold">🛒 Cart Items: {cart.length}</p>
+          </button>
         </div>
 
         {/* Repeat Last Order */}
