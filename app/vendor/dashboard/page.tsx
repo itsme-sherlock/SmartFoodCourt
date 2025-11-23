@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import MobileMenu from '@/components/MobileMenu';
 import QRScanner from '@/components/QRScanner';
 import AIBadge from '@/components/ui/AIBadge';
+import SuccessAnimation from '@/components/SuccessAnimation';
 import type { Order } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 
@@ -22,6 +23,8 @@ export default function VendorDashboard() {
   const [showQRModal, setShowQRModal] = useState(false);
   const [selectedOrderForQR, setSelectedOrderForQR] = useState<string | null>(null);
   const [lastStatusChange, setLastStatusChange] = useState<{ orderId: string; status: string; time: number } | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [completedOrderIdForSuccess, setCompletedOrderIdForSuccess] = useState('');
 
   const handleLogout = () => {
     logout();
@@ -29,6 +32,7 @@ export default function VendorDashboard() {
   };
 
   const mobileMenuLinks = [
+    { label: '✅ Completed Orders', href: '/vendor/orders' },
     { label: '📋 Menu Manager', href: '/vendor/menu' },
     { label: '📊 Forecasting & Analytics', href: '/vendor/forecasting' },
   ];
@@ -120,6 +124,8 @@ export default function VendorDashboard() {
   }, [user?.stall, supabase]);
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
+    console.log('🔄 handleStatusChange called:', { orderId, newStatus });
+    
     try {
       if (newStatus === 'ready') {
         await markOrderReady(orderId);
@@ -142,6 +148,17 @@ export default function VendorDashboard() {
           description: `Pickup ready - Customer will be notified`,
           duration: 5000,
         });
+      } else if (newStatus === 'completed') {
+        // Show success animation for completed orders
+        console.log('🎉 COMPLETED ORDER:', orderId, 'Setting showSuccess to true');
+        setCompletedOrderIdForSuccess(orderId);
+        setShowSuccess(true);
+
+        setTimeout(() => {
+          toast.success(`Order ${orderId} completed!`, {
+            description: `Status updated successfully`,
+          });
+        }, 2000);
       } else {
         toast.success(`Order ${orderId} marked as ${newStatus}`, {
           description: `Status updated successfully`,
@@ -178,11 +195,18 @@ export default function VendorDashboard() {
       await updateOrderStatus(orderIdToComplete.toUpperCase(), 'completed');
       
       setCompletedOrders(new Set([...completedOrders, orderIdToComplete.toUpperCase()]));
+      setCompletedOrderIdForSuccess(orderIdToComplete.toUpperCase());
       setScannedOrderId('');
       
-      toast.success('Order completed!', {
-        description: `Order ${orderIdToComplete} has been marked as completed`,
-      });
+      // Show success animation
+      setShowSuccess(true);
+      
+      // Delay toast to show after animation
+      setTimeout(() => {
+        toast.success('Order completed!', {
+          description: `Order ${orderIdToComplete} has been marked as completed`,
+        });
+      }, 2000);
     } catch (err) {
       console.error('Error completing order:', err);
       toast.error('Failed to complete order');
@@ -325,13 +349,23 @@ export default function VendorDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* MOBILE MENU COMPONENT */}
-      <MobileMenu 
-        userName={user?.name || 'Vendor'} 
-        menuLinks={mobileMenuLinks} 
-        onLogout={handleLogout}
+    <>
+      <SuccessAnimation 
+        show={showSuccess}
+        message={`Order ${completedOrderIdForSuccess} Completed! ✓`}
+        onComplete={() => {
+          console.log('🎬 SuccessAnimation onComplete called, hiding animation');
+          setShowSuccess(false);
+        }}
+        duration={3000}
       />
+      <div className="min-h-screen bg-gray-50">
+        {/* MOBILE MENU COMPONENT */}
+        <MobileMenu 
+          userName={user?.name || 'Vendor'} 
+          menuLinks={mobileMenuLinks} 
+          onLogout={handleLogout}
+        />
 
       {/* DESKTOP HEADER */}
       <header className="bg-white shadow-sm hidden md:block">
@@ -341,6 +375,9 @@ export default function VendorDashboard() {
             <p className="text-gray-600 text-sm">Welcome, {user?.name} • Stall: {user?.stall}</p>
           </div>
           <div className="flex items-center gap-4">
+            <Link href="/vendor/orders" className="text-green-600 hover:underline font-semibold">
+              ✅ Completed Orders
+            </Link>
             <Link href="/vendor/menu" className="text-green-600 hover:underline">
               📋 Menu Manager
             </Link>
@@ -733,5 +770,6 @@ export default function VendorDashboard() {
         )}
       </main>
     </div>
+    </>
   );
 }

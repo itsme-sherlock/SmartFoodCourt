@@ -6,10 +6,18 @@ import { LogOut, Megaphone, Gift, Target, Calendar, Users, TrendingUp } from 'lu
 import MobileMenu from '@/components/MobileMenu';
 import { useEffect, useState } from 'react';
 import AIBadge from '@/components/ui/AIBadge';
+import ComingSoonModal from '@/components/ComingSoonModal';
 
 export default function AdminCampaigns() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalFeature, setModalFeature] = useState('');
+
+  const showComingSoon = (feature: string) => {
+    setModalFeature(feature);
+    setModalOpen(true);
+  };
 
   const handleLogout = () => {
     logout();
@@ -174,7 +182,10 @@ export default function AdminCampaigns() {
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-800">Active Campaigns</h2>
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition">
+            <button 
+              onClick={() => showComingSoon('Create New Campaign')}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition"
+            >
               ➕ Create Campaign
             </button>
           </div>
@@ -224,10 +235,16 @@ export default function AdminCampaigns() {
                     </span>
                   </div>
                   <div className="flex gap-2">
-                    <button className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm transition">
+                    <button 
+                      onClick={() => showComingSoon('Edit Campaign')}
+                      className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm transition"
+                    >
                       Edit
                     </button>
-                    <button className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition">
+                    <button 
+                      onClick={() => showComingSoon('Pause Campaign')}
+                      className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition"
+                    >
                       Pause
                     </button>
                   </div>
@@ -251,7 +268,10 @@ export default function AdminCampaigns() {
                 </div>
                 <h3 className="font-bold text-gray-800 text-center mb-2">{template.name}</h3>
                 <p className="text-sm text-gray-600 text-center mb-4">{template.description}</p>
-                <button className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm font-medium transition">
+                <button 
+                  onClick={() => showComingSoon(`Use ${template.name} Template`)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm font-medium transition"
+                >
                   Use Template
                 </button>
               </div>
@@ -289,10 +309,16 @@ export default function AdminCampaigns() {
                 <span className="font-medium text-gray-800">Quick Actions</span>
               </div>
               <div className="space-y-2">
-                <button className="w-full bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm transition">
+                <button 
+                  onClick={() => showComingSoon('Schedule Campaign')}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded text-sm transition"
+                >
                   Schedule Campaign
                 </button>
-                <button className="w-full bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded text-sm transition">
+                <button 
+                  onClick={() => showComingSoon('Campaign Analytics')}
+                  className="w-full bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded text-sm transition"
+                >
                   View Analytics
                 </button>
               </div>
@@ -300,6 +326,12 @@ export default function AdminCampaigns() {
           </div>
         </div>
       </main>
+
+      <ComingSoonModal 
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        featureName={modalFeature}
+      />
     </div>
   );
 }

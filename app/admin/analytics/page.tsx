@@ -7,6 +7,7 @@ import MobileMenu from '@/components/MobileMenu';
 import { useEffect, useState } from 'react';
 import { VendorPerformance } from '@/lib/types';
 import AIBadge from '@/components/ui/AIBadge';
+import ComingSoonModal from '@/components/ComingSoonModal';
 
 export default function AdminAnalytics() {
   const router = useRouter();
@@ -20,6 +21,13 @@ export default function AdminAnalytics() {
   });
   const [vendorPerformance, setVendorPerformance] = useState<VendorPerformance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalFeature, setModalFeature] = useState('');
+
+  const showComingSoon = (feature: string) => {
+    setModalFeature(feature);
+    setModalOpen(true);
+  };
 
   const handleLogout = () => {
     logout();
@@ -303,21 +311,39 @@ export default function AdminAnalytics() {
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Reports & Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition">
+            <button 
+              onClick={() => showComingSoon('Export Daily Report')}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition"
+            >
               📊 Export Daily Report
             </button>
-            <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition">
+            <button 
+              onClick={() => showComingSoon('Generate Weekly Summary')}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition"
+            >
               📈 Generate Weekly Summary
             </button>
-            <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium transition">
+            <button 
+              onClick={() => showComingSoon('Performance Alerts')}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium transition"
+            >
               🎯 Performance Alerts
             </button>
-            <button className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg font-medium transition">
+            <button 
+              onClick={() => showComingSoon('Send Analytics Email')}
+              className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-3 rounded-lg font-medium transition"
+            >
               📧 Send Analytics Email
             </button>
           </div>
         </div>
       </main>
+
+      <ComingSoonModal 
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        featureName={modalFeature}
+      />
     </div>
   );
 }

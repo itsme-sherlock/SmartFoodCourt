@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
 import { MenuProvider } from "@/context/MenuContext";
 import { Toaster } from "@/components/ui/sonner";
-import FoodGenie from "@/components/FoodGenie";
+// import FoodGenie from "@/components/FoodGenie";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,7 +32,7 @@ export default function RootLayout({
         <AuthProvider>
           <MenuProvider>
             {children}
-            <FoodGenie />
+            {/* <FoodGenie /> */}
             <Toaster />
           </MenuProvider>
         </AuthProvider>

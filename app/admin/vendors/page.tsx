@@ -7,12 +7,20 @@ import MobileMenu from '@/components/MobileMenu';
 import { useEffect, useState } from 'react';
 import { mockVendors } from '@/lib/mockData';
 import { VendorPerformance } from '@/lib/types';
+import ComingSoonModal from '@/components/ComingSoonModal';
 
 export default function AdminVendors() {
   const router = useRouter();
   const { user, logout, getVendorPerformance } = useAuth();
   const [vendorPerformance, setVendorPerformance] = useState<VendorPerformance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalFeature, setModalFeature] = useState('');
+
+  const showComingSoon = (feature: string) => {
+    setModalFeature(feature);
+    setModalOpen(true);
+  };
 
   const handleLogout = () => {
     logout();
@@ -204,10 +212,16 @@ export default function AdminVendors() {
                 </div>
 
                 <div className="flex gap-2">
-                  <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm font-medium transition">
+                  <button 
+                    onClick={() => showComingSoon('View Vendor Details')}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm font-medium transition"
+                  >
                     View Details
                   </button>
-                  <button className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded text-sm font-medium transition">
+                  <button 
+                    onClick={() => showComingSoon('Vendor Menu Management')}
+                    className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded text-sm font-medium transition"
+                  >
                     Manage Menu
                   </button>
                 </div>
@@ -226,18 +240,33 @@ export default function AdminVendors() {
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition">
+            <button 
+              onClick={() => showComingSoon('Add New Vendor')}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-medium transition"
+            >
               ➕ Add New Vendor
             </button>
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition">
+            <button 
+              onClick={() => showComingSoon('Generate Vendor Report')}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition"
+            >
               📊 Generate Report
             </button>
-            <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium transition">
+            <button 
+              onClick={() => showComingSoon('System Settings')}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium transition"
+            >
               ⚙️ System Settings
             </button>
           </div>
         </div>
       </main>
+
+      <ComingSoonModal 
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        featureName={modalFeature}
+      />
     </div>
   );
 }
