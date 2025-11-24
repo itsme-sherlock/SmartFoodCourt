@@ -123,6 +123,23 @@ export default function VendorDashboard() {
     };
   }, [user?.stall, supabase]);
 
+  // Initialize completedOrders Set with today's completed orders
+  useEffect(() => {
+    const todayISO = new Date().toISOString().split('T')[0];
+    const yesterdayISO = new Date();
+    yesterdayISO.setDate(yesterdayISO.getDate() - 1);
+    const yesterdayISOStr = yesterdayISO.toISOString().split('T')[0];
+
+    const todaysCompletedOrders = vendorOrders.filter(order => {
+      const orderISO = order.dateISO || (order.timestamp ? new Date(order.timestamp).toISOString().split('T')[0] : '');
+      return (orderISO === todayISO || orderISO === yesterdayISOStr) && order.status === 'completed';
+    });
+
+    if (todaysCompletedOrders.length > 0) {
+      setCompletedOrders(new Set(todaysCompletedOrders.map(order => order.orderId)));
+    }
+  }, [vendorOrders]);
+
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     console.log('🔄 handleStatusChange called:', { orderId, newStatus });
     
@@ -151,6 +168,10 @@ export default function VendorDashboard() {
       } else if (newStatus === 'completed') {
         // Show success animation for completed orders
         console.log('🎉 COMPLETED ORDER:', orderId, 'Setting showSuccess to true');
+        
+        // Update the completed orders Set
+        setCompletedOrders(prev => new Set([...prev, orderId]));
+        
         setCompletedOrderIdForSuccess(orderId);
         setShowSuccess(true);
 

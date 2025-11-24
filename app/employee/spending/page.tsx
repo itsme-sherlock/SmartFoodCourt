@@ -47,7 +47,10 @@ export default function SpendingTracker() {
         case 'weekly':
           const weekStart = new Date(now);
           weekStart.setDate(now.getDate() - now.getDay());
-          return orderDate >= weekStart;
+          weekStart.setHours(0, 0, 0, 0);
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 7);
+          return orderDate >= weekStart && orderDate < weekEnd;
         case 'monthly':
           return orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear();
         default:
