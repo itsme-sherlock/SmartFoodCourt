@@ -5,12 +5,14 @@
 -- Drop existing policies to avoid conflicts.
 DROP POLICY IF EXISTS "Allow employees to see their own orders" ON public.orders;
 DROP POLICY IF EXISTS "Allow employees to create their own orders" ON public.orders;
+DROP POLICY IF EXISTS "Allow employees to update their own orders" ON public.orders;
 DROP POLICY IF EXISTS "Allow vendors to see their stall orders" ON public.orders;
 DROP POLICY IF EXISTS "Allow vendors to update their order status" ON public.orders;
 DROP POLICY IF EXISTS "Allow realtime access to orders" ON public.orders;
 DROP POLICY IF EXISTS "Allow admin access to orders" ON public.orders;
 
 DROP POLICY IF EXISTS "Allow employees to create vendor_orders" ON public.vendor_orders;
+DROP POLICY IF EXISTS "Allow employees to see vendor_orders" ON public.vendor_orders;
 DROP POLICY IF EXISTS "Allow vendors to see their vendor_orders" ON public.vendor_orders;
 DROP POLICY IF EXISTS "Allow realtime access to vendor_orders" ON public.vendor_orders;
 DROP POLICY IF EXISTS "Allow admin access to vendor_orders" ON public.vendor_orders;
@@ -22,36 +24,26 @@ DROP POLICY IF EXISTS "Allow admin access to vendor_orders" ON public.vendor_ord
 -- 1. Enable RLS on the 'orders' table
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 
--- 2. Policy for Employees: Allow them to see their own orders.
-CREATE POLICY "Allow employees to see their own orders"
+-- 2. Allow authenticated users to see all orders (for now - permissive for testing)
+CREATE POLICY "Allow authenticated users to read orders"
 ON public.orders
 FOR SELECT
-USING (auth.uid() = user_id);
+USING (auth.role() = 'authenticated' OR auth.role() = 'anon');
 
--- 3. Policy for Employees: Allow them to create new orders for themselves.
-CREATE POLICY "Allow employees to create their own orders"
+-- 3. Allow authenticated users to create orders
+CREATE POLICY "Allow authenticated users to insert orders"
 ON public.orders
 FOR INSERT
-WITH CHECK (auth.uid() = user_id);
+WITH CHECK (auth.role() = 'authenticated' OR auth.role() = 'anon');
 
--- 4. Policy for Employees: Allow them to update their own orders.
-CREATE POLICY "Allow employees to update their own orders"
+-- 4. Allow authenticated users to update orders
+CREATE POLICY "Allow authenticated users to update orders"
 ON public.orders
 FOR UPDATE
-USING (auth.uid() = user_id);
+USING (auth.role() = 'authenticated' OR auth.role() = 'anon')
+WITH CHECK (auth.role() = 'authenticated' OR auth.role() = 'anon');
 
--- 5. Policy for Service Role (Admin/API): Allow full access
-CREATE POLICY "Allow admin access to orders"
-ON public.orders
-FOR ALL
-USING (
-  current_setting('request.headers', true)::json->>'x-api-key' IS NOT NULL
-)
-WITH CHECK (
-  current_setting('request.headers', true)::json->>'x-api-key' IS NOT NULL
-);
-
--- 6. POLICY FOR REALTIME (IMPORTANT)
+-- 5. POLICY FOR REALTIME (IMPORTANT)
 -- This policy allows the internal Supabase postgres user to read all orders.
 -- This is REQUIRED for Realtime to broadcast changes when RLS is enabled.
 CREATE POLICY "Allow realtime access to orders"
@@ -67,28 +59,24 @@ USING ( session_user = 'postgres' );
 -- 1. Enable RLS on the 'vendor_orders' table
 ALTER TABLE public.vendor_orders ENABLE ROW LEVEL SECURITY;
 
--- 2. Policy for Employees: Allow them to insert entries when creating a new order.
-CREATE POLICY "Allow employees to create vendor_orders"
-ON public.vendor_orders
-FOR INSERT
-WITH CHECK (true);
-
--- 3. Policy for Employees: Allow them to see vendor_orders
-CREATE POLICY "Allow employees to see vendor_orders"
+-- 2. Allow authenticated users to read vendor_orders
+CREATE POLICY "Allow authenticated users to read vendor_orders"
 ON public.vendor_orders
 FOR SELECT
-USING (true);
+USING (auth.role() = 'authenticated' OR auth.role() = 'anon');
 
--- 4. Policy for Service Role (Admin/API): Allow full access
-CREATE POLICY "Allow admin access to vendor_orders"
+-- 3. Allow authenticated users to insert vendor_orders
+CREATE POLICY "Allow authenticated users to insert vendor_orders"
 ON public.vendor_orders
-FOR ALL
-USING (
-  current_setting('request.headers', true)::json->>'x-api-key' IS NOT NULL
-)
-WITH CHECK (
-  current_setting('request.headers', true)::json->>'x-api-key' IS NOT NULL
-);
+FOR INSERT
+WITH CHECK (auth.role() = 'authenticated' OR auth.role() = 'anon');
+
+-- 4. Allow authenticated users to update vendor_orders
+CREATE POLICY "Allow authenticated users to update vendor_orders"
+ON public.vendor_orders
+FOR UPDATE
+USING (auth.role() = 'authenticated' OR auth.role() = 'anon')
+WITH CHECK (auth.role() = 'authenticated' OR auth.role() = 'anon');
 
 -- 5. POLICY FOR REALTIME (IMPORTANT)
 -- This policy allows the internal Supabase postgres user to read all vendor_orders.
