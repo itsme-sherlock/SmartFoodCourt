@@ -7,26 +7,13 @@ DROP POLICY IF EXISTS "Allow employees to see their own orders" ON public.orders
 DROP POLICY IF EXISTS "Allow employees to create their own orders" ON public.orders;
 DROP POLICY IF EXISTS "Allow vendors to see their stall orders" ON public.orders;
 DROP POLICY IF EXISTS "Allow vendors to update their order status" ON public.orders;
-DROP POLICY IF EXISTS "Allow realtime access to orders" ON public.orders; -- New policy
+DROP POLICY IF EXISTS "Allow realtime access to orders" ON public.orders;
+DROP POLICY IF EXISTS "Allow admin access to orders" ON public.orders;
 
 DROP POLICY IF EXISTS "Allow employees to create vendor_orders" ON public.vendor_orders;
 DROP POLICY IF EXISTS "Allow vendors to see their vendor_orders" ON public.vendor_orders;
-DROP POLICY IF EXISTS "Allow realtime access to vendor_orders" ON public.vendor_orders; -- New policy
-
--- Helper function to get the user's role from their JWT metadata.
--- This assumes you have a 'role' field in the user's app_metadata.
-CREATE OR REPLACE FUNCTION auth.get_user_role()
-RETURNS TEXT AS $$
-  SELECT nullif(current_setting('request.jwt.claims', true)::jsonb ->> 'app_metadata'::text, '')::jsonb ->> 'role'
-$$ LANGUAGE sql STABLE;
-
--- Helper function to get the user's stall ID from their JWT metadata.
--- This assumes you have a 'stall' field in the user's app_metadata for vendors.
-CREATE OR REPLACE FUNCTION auth.get_user_stall_id()
-RETURNS TEXT AS $$
-  SELECT nullif(current_setting('request.jwt.claims', true)::jsonb ->> 'app_metadata'::text, '')::jsonb ->> 'stall'
-$$ LANGUAGE sql STABLE;
-
+DROP POLICY IF EXISTS "Allow realtime access to vendor_orders" ON public.vendor_orders;
+DROP POLICY IF EXISTS "Allow admin access to vendor_orders" ON public.vendor_orders;
 
 -- ------------------------------------------------
 -- Policies for the 'orders' table
@@ -34,7 +21,6 @@ $$ LANGUAGE sql STABLE;
 
 -- 1. Enable RLS on the 'orders' table
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.orders FORCE ROW LEVEL SECURITY;
 
 -- 2. Policy for Employees: Allow them to see their own orders.
 CREATE POLICY "Allow employees to see their own orders"
@@ -48,37 +34,26 @@ ON public.orders
 FOR INSERT
 WITH CHECK (auth.uid() = user_id);
 
--- 4. Policy for Vendors: Allow them to see orders that are linked to their stall.
-CREATE POLICY "Allow vendors to see their stall orders"
-ON public.orders
-FOR SELECT
-USING (
-  auth.get_user_role() = 'vendor' AND
-  EXISTS (
-    SELECT 1
-    FROM public.vendor_orders
-    WHERE public.vendor_orders.order_id = public.orders.order_id
-    AND public.vendor_orders.vendor_id = auth.get_user_stall_id()
-  )
-);
-
--- 5. Policy for Vendors: Allow them to update the status of their orders.
-CREATE POLICY "Allow vendors to update their order status"
+-- 4. Policy for Employees: Allow them to update their own orders.
+CREATE POLICY "Allow employees to update their own orders"
 ON public.orders
 FOR UPDATE
+USING (auth.uid() = user_id);
+
+-- 5. Policy for Service Role (Admin/API): Allow full access
+CREATE POLICY "Allow admin access to orders"
+ON public.orders
+FOR ALL
 USING (
-  auth.get_user_role() = 'vendor' AND
-  EXISTS (
-    SELECT 1
-    FROM public.vendor_orders
-    WHERE public.vendor_orders.order_id = public.orders.order_id
-    AND public.vendor_orders.vendor_id = auth.get_user_stall_id()
-  )
+  current_setting('request.headers', true)::json->>'x-api-key' IS NOT NULL
+)
+WITH CHECK (
+  current_setting('request.headers', true)::json->>'x-api-key' IS NOT NULL
 );
 
--- 6. NEW POLICY FOR REALTIME
+-- 6. POLICY FOR REALTIME (IMPORTANT)
 -- This policy allows the internal Supabase postgres user to read all orders.
--- This is REQUIRED for Realtime to broadcast changes when RLS is forced.
+-- This is REQUIRED for Realtime to broadcast changes when RLS is enabled.
 CREATE POLICY "Allow realtime access to orders"
 ON public.orders
 FOR SELECT
@@ -91,33 +66,33 @@ USING ( session_user = 'postgres' );
 
 -- 1. Enable RLS on the 'vendor_orders' table
 ALTER TABLE public.vendor_orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.vendor_orders FORCE ROW LEVEL SECURITY;
 
 -- 2. Policy for Employees: Allow them to insert entries when creating a new order.
 CREATE POLICY "Allow employees to create vendor_orders"
 ON public.vendor_orders
 FOR INSERT
-WITH CHECK (
-  EXISTS (
-    SELECT 1
-    FROM public.orders
-    WHERE public.orders.order_id = public.vendor_orders.order_id
-    AND public.orders.user_id = auth.uid()
-  )
-);
+WITH CHECK (true);
 
--- 3. Policy for Vendors: Allow them to see the records related to their stall.
-CREATE POLICY "Allow vendors to see their vendor_orders"
+-- 3. Policy for Employees: Allow them to see vendor_orders
+CREATE POLICY "Allow employees to see vendor_orders"
 ON public.vendor_orders
 FOR SELECT
+USING (true);
+
+-- 4. Policy for Service Role (Admin/API): Allow full access
+CREATE POLICY "Allow admin access to vendor_orders"
+ON public.vendor_orders
+FOR ALL
 USING (
-  auth.get_user_role() = 'vendor' AND
-  vendor_id = auth.get_user_stall_id()
+  current_setting('request.headers', true)::json->>'x-api-key' IS NOT NULL
+)
+WITH CHECK (
+  current_setting('request.headers', true)::json->>'x-api-key' IS NOT NULL
 );
 
--- 4. NEW POLICY FOR REALTIME
+-- 5. POLICY FOR REALTIME (IMPORTANT)
 -- This policy allows the internal Supabase postgres user to read all vendor_orders.
--- This is REQUIRED for Realtime to broadcast changes when RLS is forced.
+-- This is REQUIRED for Realtime to broadcast changes when RLS is enabled.
 CREATE POLICY "Allow realtime access to vendor_orders"
 ON public.vendor_orders
 FOR SELECT
