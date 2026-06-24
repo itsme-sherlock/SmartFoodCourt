@@ -413,6 +413,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 						if (error) {
 							console.warn('Warning: Could not sync with database:', error.message);
 							// Local update already succeeded, so don't throw
+						} else {
+							// Force refresh after update to sync across all listeners
+							setTimeout(() => refreshOrders(), 100);
 						}
 					}
 				} catch (supabaseErr) {
@@ -450,6 +453,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 						if (orderError) {
 							console.warn('Warning: Could not sync order status with database:', orderError.message);
+						} else {
+							// Force refresh after update to sync across all listeners
+							setTimeout(() => refreshOrders(), 100);
 						}
 
 						// Try to update vendor_orders table if it exists
@@ -710,4 +716,3 @@ export const useAuth = () => {
 	}
 	return context;
 };
-
